@@ -1,0 +1,3 @@
+[credentials]
+email=foo@bar.com
+password=secret

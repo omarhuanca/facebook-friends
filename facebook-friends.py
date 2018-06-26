@@ -3,6 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from datetime import datetime
+import configparser
 from sys import argv
 import random
 
@@ -18,14 +19,14 @@ wd_options.add_argument("--mute-audio")
 browser = webdriver.Chrome(chrome_options=wd_options)
 
 # --------------- Ask user to log in -----------------
-def fb_login():
+def fb_login(credentials):
 	print("Opening browser...")
+	email = credentials.get('credentials', 'email')
+	password = credentials.get('credentials', 'password')
 	browser.get("https://www.facebook.com/")
-	browser.find_element_by_id('email').send_keys("deeppheaven@gmail.com")
-	browser.find_element_by_id('pass').click();
-	# browser.find_element_by_id('pass').send_keys("")
-	# browser.find_element_by_id('loginbutton').click()
-	a = input("Please log into facebook and press enter after the page loads...")
+	browser.find_element_by_id('email').send_keys(email)
+	browser.find_element_by_id('pass').send_keys(password)
+	browser.find_element_by_id('loginbutton').click()
 
 # --------------- Scroll to bottom of page -----------------
 def scroll_to_bottom():
@@ -144,7 +145,16 @@ def scrape_2nd_degrees():
 
 # --------------- Start Scraping ---------------
 now = datetime.now()
-fb_login()
+configPath = "config.txt"
+if configPath:
+	configObj = configparser.ConfigParser()
+	configObj.read(configPath)
+	email = configObj.get('credentials', 'email')
+	password = configObj.get('credentials', 'password')
+else:
+	print('Enter the config path')
+fb_login(configObj)
+
 if len(argv) is 1:
 	scrape_1st_degrees()
 elif len(argv) is 2:
