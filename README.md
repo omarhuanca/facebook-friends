@@ -27,7 +27,7 @@ password=secret
 Note: This could take days if you have lots of friends!
 
 1. Get your 1st degree connections first, so you have the 1st-degree CSV file.
-2. Put the 1st-degree CSV in the same folder as **python facebook-connections.py**
+2. Put the 1st-degree CSV in the same folder as **python facebook-friends.py**
 3. Run ```python facebook-connections.py 1st-degree_YYYY-MM-DD_HHMM.csv```, with the actual filename from the first step.
 4. A browser window will open.
 5. You should the script looping through your Facebook friend's friend pages.
