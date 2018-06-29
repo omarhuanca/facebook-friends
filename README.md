@@ -9,7 +9,7 @@ You'll need to have python, pip, and [Google Chrome](https://www.google.com/chro
 2. `cd` into the cloned folder 
 3. `pip install -r requirements.txt`
 
-## Edit its config.txt file
+## Set up its config.txt file
 Fill your email and password of Facebook's profile.
 ```
 [credentials]
