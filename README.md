@@ -23,7 +23,7 @@ password=secret
 3. You should see your Facebook friends page scroll to the bottom.
 4. A CSV file will be created with the data (1st-degree_YYYY-MM-DD_HHMM.csv)
 
-### 2st degree friend connections (your friends' friends)
+### 2st degree friend connections (your friend's friends)
 Note: This could take days if you have lots of friends!
 
 1. Get your 1st degree connections first, so you have the 1st-degree CSV file.
