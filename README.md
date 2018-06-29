@@ -10,7 +10,7 @@ You'll need to have python, pip, and [Google Chrome](https://www.google.com/chro
 3. `pip install -r requirements.txt`
 
 ## Edit its config.txt file
-Fill your email and password
+Fill your email and password of Facebook's profile.
 ```
 [credentials]
 email=foo@bar.com
