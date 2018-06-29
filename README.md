@@ -30,5 +30,5 @@ Note: This could take days if you have lots of friends!
 2. Put the 1st-degree CSV in the same folder as **python facebook-connections.py**
 3. Run ```python facebook-connections.py 1st-degree_YYYY-MM-DD_HHMM.csv```, with the actual filename from the first step.
 4. A browser window will open.
-5. You should the script looping through your Facebook friends' friend pages.
+5. You should the script looping through your Facebook friend's friend pages.
 6. A CSV file will be created with the data (2nd-degree_YYYY-MM-DD_HHMM.csv)
