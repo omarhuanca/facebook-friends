@@ -1,11 +1,12 @@
-import os, datetime, time, csv
+import os, time, csv
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from datetime import datetime
 import configparser
+import re
+
 from sys import argv
-import random
 
 print("\n" * 100)
 
@@ -16,7 +17,7 @@ wd_options = Options()
 wd_options.add_argument("--disable-notifications")
 wd_options.add_argument("--disable-infobars")
 wd_options.add_argument("--mute-audio")
-browser = webdriver.Chrome(chrome_options=wd_options)
+browser = webdriver.Chrome(options=wd_options)
 
 # --------------- Ask user to log in -----------------
 def fb_login(credentials):
@@ -24,9 +25,9 @@ def fb_login(credentials):
 	email = credentials.get('credentials', 'email')
 	password = credentials.get('credentials', 'password')
 	browser.get("https://www.facebook.com/")
-	browser.find_element_by_id('email').send_keys(email)
-	browser.find_element_by_id('pass').send_keys(password)
-	browser.find_element_by_id('loginbutton').click()
+	browser.find_element(By.ID, 'email').send_keys(email)
+	browser.find_element(By.ID, 'pass').send_keys(password)
+	browser.find_element(By.NAME, 'login').click()
 
 # --------------- Scroll to bottom of page -----------------
 def scroll_to_bottom():
@@ -52,21 +53,14 @@ def scroll_to_bottom():
 def scan_friends():
 	print('Scanning page for friends...')
 	friends = []
-	friend_cards = browser.find_elements_by_xpath('//div[@id="pagelet_timeline_medley_friends"]//div[@class="fsl fwb fcb"]/a')
+	friend_names = browser.find_elements(By.XPATH, '//span[@class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1tu3fi x3x7a5m x1lkfr7t x1lbecb7 x1s688f xzsf02u"]')
 
-	for friend in friend_cards:
-		if friend.get_attribute('data-hovercard') is None:
-			print(" %s (INACTIVE)" % friend.text)
-			friend_id = friend.get_attribute('ajaxify').split('id=')[1]
-			friend_active = 0
-		else:
-			print(" %s" % friend.text)
-			friend_id = friend.get_attribute('data-hovercard').split('id=')[1].split('&')[0]
-			friend_active = 1
+	for friend_name in friend_names:
+		print(friend_name.text)
+		friend_active = 1
 
 		friends.append({
-			'name': friend.text.encode('utf-8', 'ignore'), #to prevent CSV writing issues
-			'id': friend_id,
+			'name': friend_name.text.encode('utf-8', 'ignore'),
 			'active': friend_active
 			})
 
@@ -97,21 +91,38 @@ def scrape_1st_degrees():
 	#Prep CSV Output File
 	csvOut = '1st-degree_%s.csv' % now.strftime("%Y-%m-%d_%H%M")
 	writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-	writer.writerow(['A_id','A_name','B_id','B_name','active'])
+	#writer.writerow(['A_id','A_name','B_id','B_name','active'])
+	writer.writerow(['A_id', 'A_name', 'B_name', 'active'])
 
 	#Get your unique Facebook ID
-	profile_icon = browser.find_element_by_css_selector("[data-click='profile_icon'] > a > span > img")
-	myid = profile_icon.get_attribute("id")[19:]
+	profile_icon = browser.find_element(By.XPATH, "//div[@class='x1iyjqo2']/ul/li/div/a")
+	url_content = profile_icon.get_attribute("href")
+
+	# case 1
+	href_content = re.search(r"[^0-9]+", url_content)
+	myid = url_content[:href_content.start()] + url_content[href_content.end():]
+
+	if len(myid) == 0:
+		# case 2
+		start_content = re.search(r"\bcom", url_content)
+		# start_content = re.search(r"[a-z]", content)
+		new_url = url_content[:start_content.start()] + url_content[start_content.end():]
+		size = len(new_url)
+		other_myid = new_url[start_content.end() - (start_content.end() - start_content.start()):size]
+
+		unique_myid = other_myid
+	else:
+		unique_myid = myid
 
 	#Scan your Friends page (1st-degree friends)
 	print("Opening Friends page...")
-	browser.get("https://www.facebook.com/" + myid + "/friends")
+	browser.get("https://www.facebook.com/" + unique_myid + "/friends")
 	scroll_to_bottom()
 	myfriends = scan_friends()
 
 	#Write friends to CSV File
 	for friend in myfriends:
-			writer.writerow([myid,"Me",friend['id'],friend['name'],friend['active']])
+			writer.writerow([myid, "Me", friend['name'], friend['active']])
 
 	print("Successfully saved to %s" % csvOut)
 
