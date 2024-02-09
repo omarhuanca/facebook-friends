@@ -22,6 +22,7 @@ wd_options.add_argument("--disable-infobars")
 wd_options.add_argument("--mute-audio")
 browser = webdriver.Chrome(options=wd_options)
 
+
 # --------------- Ask user to log in -----------------
 def fb_login(credentials):
     print("Opening browser...")
@@ -32,9 +33,10 @@ def fb_login(credentials):
     browser.find_element(By.ID, 'pass').send_keys(password)
     browser.find_element(By.NAME, 'login').click()
 
+
 # --------------- Scroll to bottom of page -----------------
 def scroll_to_bottom():
-    SCROLL_PAUSE_TIME = 0.8
+    SCROLL_PAUSE_TIME = 0.5
 
     xpath_first_page_friend = '//div[@class="x1iyjqo2 x1pi30zi"]/div/a'
     numerator = browser.find_elements(By.XPATH, xpath_first_page_friend).__sizeof__()
@@ -64,10 +66,10 @@ def scan_friends():
 
         for friend in list_friend:
             friend_name = friend.find_element(By.TAG_NAME, 'span')
-            print(friend_name.text)
+            #print(friend_name.text)
             friend_id_value = friend.get_attribute("href")
             friend_username = get_profile_from_url(friend_id_value)
-            print('username ' + friend_username)
+            #print('username ' + friend_username)
             friend_active = 1
 
             friends.append({
@@ -81,13 +83,14 @@ def scan_friends():
         print("The element does not exist.")
     return friends
 
+
 # ----------------- Load list from CSV -----------------
 def load_csv(filename):
     myfriends = []
     with open(filename, 'rt', encoding="utf-8") as input_csv:
         reader = csv.DictReader(input_csv)
         for idx, row in enumerate(reader):
-            if row['active'] is '1':
+            if row['B_active'] is '1':
                 myfriends.append({
                     "name": row['B_name'],
                     "uid": row['B_id']
@@ -95,12 +98,13 @@ def load_csv(filename):
     print("%d friends in imported list" % (idx + 1))
     return myfriends
 
+
 # --------------- Scrape 1st degree friends ---------------
 def scrape_1st_degrees():
     # Prep CSV Output File
-    csvOut = '1st-degree_%s.csv' % now.strftime("%Y-%m-%d_%H%M")
+    csvOut = '1st_%s.csv' % now.strftime("%Y_%m_%d_%H%M")
     writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-    writer.writerow(['A_id','A_name','B_id','B_name','active'])
+    writer.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'B_active'])
 
     # Get your unique Facebook ID
     profile_icon = browser.find_element(By.XPATH, "//div[@class='x1iyjqo2']/ul/li/div/a")
@@ -119,66 +123,84 @@ def scrape_1st_degrees():
 
     print("Successfully saved to %s" % csvOut)
 
-def get_profile_from_url(url_value):
-    # case 1
-    myid = get_number_profile_from_url(url_value)
 
-    if len(myid) == 0:
-        # case 2
-        unique_myid = get_name_profile_from_url(url_value)
+def get_profile_from_url(url_value):
+    unique_myid = ''
+    profile = filter_string(r"com{1}", url_value)
+    if "=" in profile:
+        username = filter_string(r"[?]", profile)
     else:
-        unique_myid = myid
+        username = profile
+
+    string_dot = filter_string(r"[0-9]+", username)
+    number = filter_string(r"[a-z\\.]+", username)
+
+    username = change_value_string(username)
+    string_dot = change_value_string(string_dot)
+
+    if len(username) > len(string_dot):
+        if len(username) > len(number):
+            unique_myid = username
+    elif len(string_dot) > len(number):
+        unique_myid = string_dot
+    elif len(number) > len(username):
+        unique_myid = number
 
     return unique_myid
 
 
-def get_number_profile_from_url(url_value):
-    response = ''
-    if len(url_value) > 0:
-        href_content = re.search(r"[^0-9]+", url_value)
-        response = url_value[:href_content.start()] + url_value[href_content.end():]
+def change_value_string(potential_string):
+    if "=" in potential_string:
+        potential_string = ''
+    return potential_string
 
-    return response
+def filter_string(regex, potential_string):
+    split_response = ''
+    if len(potential_string) > 0 and len(regex) > 0:
+        regex_string = re.search(regex, potential_string)
+        if regex_string is not None:
+            split_string = potential_string[:regex_string.start()] + potential_string[regex_string.end():]
+            split_response = split_string[regex_string.end() +1 - (regex_string.end() - regex_string.start()):]
 
-def get_name_profile_from_url(url_value):
-    response = ''
-    if len(url_value) > 0:
-        start_content = re.search(r"\bcom", url_value)
-        new_url = url_value[:start_content.start()] + url_value[start_content.end():]
-        size = len(new_url)
-        response = new_url[start_content.end() +1 - (start_content.end() - start_content.start()):size]
-
-    return response
+    return split_response
 
 # --------------- Scrape 2nd degree friends. ---------------
 # This can take several days if you have a lot of friends!!
 def scrape_2nd_degrees():
-    # Prep CSV Output File
-    csvOut = '2nd-degree_%s.csv' % now.strftime("%Y-%m-%d_%H%M")
-    writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-    writer.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'active'])
-
     # Load friends from CSV Input File
-    #script, filename = argv
-    script = argv
-    filename = '1st-degree_2024-02-07_1609.csv'
-    print("Loading list from %s..." % filename)
-    myfriends = load_csv(filename)
-    print("------------------------------------------")
-    for idx, friend in enumerate(myfriends):
-        # Load URL of friend's friend page
-        scrape_url = "https://www.facebook.com/" + friend['uid'] + "/friends?source_ref=pb_friends_tl"
-        browser.get(scrape_url)
+    filename = input("Enter the filename .csv from the first contact list: ")
+    if "1st_" in filename and len(filename) > 0:
+        print("Loading list from %s..." % filename)
+        myfriends = load_csv(filename)
+        print("------------------------------------------")
+        search_name = input("Enter name you want search in your contact list: ")
+        search_name = search_name.strip().lower()
+        for idx, friend in enumerate(myfriends):
+            if search_name in friend['name'].lower():
 
-        # Scan your friends' Friends page (2nd-degree friends)
-        print("%d) %s" % (idx + 1, scrape_url))
-        scroll_to_bottom()
-        their_friends = scan_friends()
+                # Prep CSV Output File
+                csvOut = '2nd_%s.csv' % now.strftime("%Y_%m_%d_%H%M")
+                writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+                writer.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'B_active'])
 
-        # Write friends to CSV File
-        print('Writing friends to CSV...')
-        for person in their_friends:
-            writer.writerow([friend['uid'], friend['name'], person['id'], person['name'], person['active']])
+                # Load URL of friend's friend page
+                scrape_url = "https://www.facebook.com/" + friend['uid'] + "/friends?source_ref=pb_friends_tl"
+                browser.get(scrape_url)
+
+                # Scan your friends' Friends page (2nd-degree friends)
+                #print("%d) %s" % (idx + 1, scrape_url))
+                print("name is found in your %d contact" % (idx + 1))
+                scroll_to_bottom()
+                their_friends = scan_friends()
+
+                # Write friends to CSV File
+                print('Writing friends to CSV...')
+                for person in their_friends:
+                    writer.writerow([friend['uid'], friend['name'], person['id'], person['name'], person['active']])
+            else:
+                print("name is not found in your %d contact" % (idx + 1))
+    else:
+        print("Invalid filename .csv from the first contact list")
 
 # --------------- Start Scraping ---------------
 now = datetime.now()
@@ -192,9 +214,11 @@ else:
     print('Enter the config path')
 fb_login(configObj)
 
-if len(argv) is 1:
+item_option = input("Enter number value 1 or 2 to generate list: ")
+
+if item_option == "1":
     scrape_1st_degrees()
-elif len(argv) is 2:
+elif item_option == "2":
     scrape_2nd_degrees()
 else:
     print(
