@@ -1,11 +1,15 @@
-import os, time, csv, configparser, re
+import configparser
+import csv
+import os
+import re
+import time
+from datetime import datetime
+from random import randint
+from time import sleep
 from selenium import webdriver
 from selenium.common import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from datetime import datetime
-from time import sleep
-from random import randint
 
 print("\n" * 100)
 
@@ -57,6 +61,7 @@ def scroll_to_bottom(xpath_first_page_friend, denominator):
         browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         counter = counter + 1
 
+
 # --------------- Get list of all friends on page ---------------
 def generate_friend_list_dictionary():
     friends = []
@@ -73,12 +78,12 @@ def generate_friend_list_dictionary():
                 'name': friend_name.text,
                 'id': friend_username,
                 'profile': friend_id_value,
-                'active': 1
             })
         print('Found %r friends on page!' % len(friends))
     except NoSuchElementException:
         print("The element does not exist.")
     return friends
+
 
 # ----------------- Load list from CSV -----------------
 def load_csv(filename):
@@ -86,27 +91,26 @@ def load_csv(filename):
     with open(filename, 'rt', encoding="utf-8") as input_csv:
         reader = csv.DictReader(input_csv)
         for idx, row in enumerate(reader):
-            if row['B_active'] is '1':
-                myfriends.append({
-                    "name": row['B_name'],
-                    "uid": row['B_id'],
-                    "profile": row['B_profile']
-                })
+            myfriends.append({
+                "name": row['B_name'],
+                "uid": row['B_id'],
+                "profile": row['B_profile']
+            })
     print("%d friends in imported list" % (idx + 1))
     return myfriends
 
 
 # --------------- Scrape 1st degree friends ---------------
 def scrape_1st_degrees(prefix):
-    if len(prefix):
+    if len(prefix) > 0:
         # Prep CSV Output File
-        csvOut = prefix + "%s.csv" % now.strftime("%Y_%m_%d_%H%M")
+        csvOut = prefix + "%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
         writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-        writer.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'B_profile', 'B_active'])
+        writer.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'B_profile'])
 
-        csvOutGroup = prefix + "group_%s.csv" % now.strftime("%Y_%m_%d_%H%M")
+        csvOutGroup = prefix + "group_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
         writerGroup = csv.writer(open(csvOutGroup, 'w', encoding="utf-8"))
-        writerGroup.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'B_profile', 'B_active'])
+        writerGroup.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'B_profile'])
 
         # Get your unique Facebook ID
         profile_icon = browser.find_element(By.XPATH, "//div[@class='x1iyjqo2']/ul/li/div/a")
@@ -117,15 +121,15 @@ def scrape_1st_degrees(prefix):
         print("Opening Friends page...")
         browser.get("https://www.facebook.com/" + unique_myid + "/friends")
         scroll_to_bottom('//div[@class="x1iyjqo2 x1pi30zi"]/div/a', 2)
-        #myfriends = scan_friends()
+        # myfriends = scan_friends()
         myfriends = generate_friend_list_dictionary()
 
         # Write friends to CSV File
         for friend in myfriends:
             if "groups" in friend['profile']:
-                writerGroup.writerow([unique_myid, "Me", friend['id'], friend['name'], friend['profile'], friend['active']])
+                writerGroup.writerow([unique_myid, "Me", friend['id'], friend['name'], friend['profile']])
             else:
-                writer.writerow([unique_myid, "Me", friend['id'], friend['name'], friend['profile'], friend['active']])
+                writer.writerow([unique_myid, "Me", friend['id'], friend['name'], friend['profile']])
 
         print("Successfully saved to %s" % csvOut)
         print("Successfully saved to %s" % csvOutGroup)
@@ -180,7 +184,7 @@ def filter_string(regex, potential_string):
 def scrape_2nd_degrees(prefix):
     # Load friends from CSV Input File
     filenameReader = input("Enter the filename .csv from the first contact list: ")
-    if "1st_" in filenameReader and len(filenameReader) > 0 and len(prefix):
+    if len(filenameReader) > 0 and len(prefix):
         print("Loading list from %s..." % filenameReader)
         myfriends = load_csv(filenameReader)
         print("------------------------------------------")
@@ -188,9 +192,9 @@ def scrape_2nd_degrees(prefix):
         search_name = search_name.strip().lower()
 
         # Prep CSV Output File
-        csvOut = prefix + "%s.csv" % now.strftime("%Y_%m_%d_%H%M")
+        csvOut = prefix + "%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
         writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-        writer.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'B_profile', 'B_active'])
+        writer.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'B_profile'])
 
         for idx, friend in enumerate(myfriends):
             if search_name in friend['name'].lower():
@@ -203,14 +207,12 @@ def scrape_2nd_degrees(prefix):
                 # print("%d) %s" % (idx + 1, scrape_url))
                 print("name is found in your %d contact" % (idx + 1))
                 scroll_to_bottom('//div[@class="x1iyjqo2 x1pi30zi"]/div/a', 2)
-                #their_friends = scan_friends()
                 their_friends = generate_friend_list_dictionary()
 
                 # Write friends to CSV File
                 print('Writing friends to CSV...')
                 for person in their_friends:
-                    writer.writerow([friend['uid'], friend['name'], person['id'], person['name'], person['profile'],
-                                     person['active']])
+                    writer.writerow([friend['uid'], friend['name'], person['id'], person['name'], person['profile']])
             else:
                 print("name is not found in your %d contact" % (idx + 1))
 
@@ -234,48 +236,56 @@ def get_data_info():
         try:
             if "profile.php" in each_link:
                 browser.get(url=f"{each_link}&sk=about_contact_and_basic_info")
+                get_info_basic_info(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
+                                    all_friends_phone_number, all_friends_year, friend)
+
             elif "groups" not in each_link:
                 browser.get(url=f"{each_link}/about_contact_and_basic_info")
-            else:
-                browser.get(url=f"{each_link}")
+                get_info_basic_info(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
+                                    all_friends_phone_number, all_friends_year, friend)
 
-            sleep(randint(1, 3))
-            information_list = browser.find_elements(By.XPATH,
-                                                     "//div[@class='x78zum5 xdt5ytf xz62fqu x16ldp7u']/div[1]/span")
-            ph_list = []
-            url_value = friend['id']
-            for pn_item in information_list:
-                if len(pn_item.text) > 0:
-                    ph_list.append(pn_item.text)
-            for pn_item in ph_list:
-                if pn_item == "Mobile":
-                    item_id = ph_list.index(pn_item) - 1
-                    all_friends_phone_number.append({url_value: ph_list[item_id]})
-                if pn_item == "Email":
-                    item_id = ph_list.index(pn_item) - 1
-                    all_friends_email.append({url_value: ph_list[item_id]})
-                if pn_item == "Gender":
-                    item_info = ph_list.index(pn_item) - 1
-                    all_friends_gender.append({url_value: ph_list[item_info]})
-                if pn_item == "Birth date":
-                    item_date = ph_list.index(pn_item) - 1
-                    all_friends_date.append({url_value: ph_list[item_date]})
-                if pn_item == "Birth year":
-                    item_year = ph_list.index(pn_item) - 1
-                    all_friends_year.append({url_value: ph_list[item_year]})
-                if pn_item == "Languages":
-                    item_year = ph_list.index(pn_item) - 1
-                    all_friends_language.append({url_value: ph_list[item_year]})
-            sleep(2)
         except NoSuchElementException:
             print("No Details")
             continue
-    return all_friends_phone_number, all_friends_email, all_friends_gender, all_friends_date, all_friends_year, all_friends_language
+    return all_friends_phone_number, all_friends_email, all_friends_gender, all_friends_date, all_friends_year,\
+           all_friends_language
+
+
+def get_info_basic_info(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
+                        all_friends_phone_number, all_friends_year, friend):
+    sleep(randint(1, 3))
+    information_list = browser.find_elements(By.XPATH,
+                                             "//div[@class='x78zum5 xdt5ytf xz62fqu x16ldp7u']/div[1]/span")
+    ph_list = []
+    url_value = friend['id']
+    for pn_item in information_list:
+        if len(pn_item.text) > 0:
+            ph_list.append(pn_item.text)
+    for pn_item in ph_list:
+        if pn_item == "Mobile":
+            item_id = ph_list.index(pn_item) - 1
+            all_friends_phone_number.append({url_value: ph_list[item_id]})
+        if pn_item == "Email":
+            item_id = ph_list.index(pn_item) - 1
+            all_friends_email.append({url_value: ph_list[item_id]})
+        if pn_item == "Gender":
+            item_info = ph_list.index(pn_item) - 1
+            all_friends_gender.append({url_value: ph_list[item_info]})
+        if pn_item == "Birth date":
+            item_date = ph_list.index(pn_item) - 1
+            all_friends_date.append({url_value: ph_list[item_date]})
+        if pn_item == "Birth year":
+            item_year = ph_list.index(pn_item) - 1
+            all_friends_year.append({url_value: ph_list[item_year]})
+        if pn_item == "Languages":
+            item_year = ph_list.index(pn_item) - 1
+            all_friends_language.append({url_value: ph_list[item_year]})
+    sleep(2)
 
 
 def generate_user_like_2nd(prefix):
     filenameReader = input("Enter the filename .csv from the second contact list: ")
-    if "2nd_" in filenameReader and len(filenameReader) > 0 and len(prefix) > 0:
+    if len(filenameReader) > 0 and len(prefix) > 0:
         print("Loading list from %s..." % filenameReader)
         myfriends = load_csv(filenameReader)
         response_list = []
@@ -313,9 +323,10 @@ def generate_user_like_1st(prefix):
 
 
 def write_list_like(item_list, prefix):
-    if len(item_list) > 0 and len(prefix):
+    if len(item_list) > 0 and len(prefix) > 0:
         csvOut = prefix + "user_like_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
         writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+        writer.writerow(['Name', '[Like]'])
         for item in item_list:
             writer.writerow(item)
 
@@ -423,8 +434,21 @@ def generate_basic_info(prefix):
 
 def scan_list_member():
     try:
-        xpath_first_page_friend = '//span[@class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x41vudc x6prxxf xvq8zen xk50ysn xzsf02u x1yc453h"]/span/span/a'
+        xpath_first_page_friend = '//span[@class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv ' \
+                                  'xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x41vudc x6prxxf xvq8zen ' \
+                                  'xk50ysn xzsf02u x1yc453h"]/span/span/a '
         list_friend = browser.find_elements(By.XPATH, xpath_first_page_friend)
+        return list_friend
+    except NoSuchElementException:
+        print("The elements does not exist.")
+
+
+def scan_list_member_follower(xpath_first_page_friend):
+    try:
+        list_friend = []
+        if len(xpath_first_page_friend) > 0:
+            list_friend = browser.find_elements(By.XPATH, xpath_first_page_friend)
+
         return list_friend
     except NoSuchElementException:
         print("The elements does not exist.")
@@ -432,14 +456,14 @@ def scan_list_member():
 
 def generate_group_member(prefix):
     filename = input("Enter the filename .csv from the first contact group list: ")
-    if "1st_group_" in filename and len(filename) > 0 and len (prefix) > 0:
+    if len(filename) > 0 and len(prefix) > 0:
         print("Loading list from %s..." % filename)
         myfriends = load_csv(filename)
         print("------------------------------------------")
         # Prep CSV Output File
-        csvOut = prefix + 'group_%s.csv' % now.strftime("%Y_%m_%d_%H%M")
+        csvOut = prefix + 'group_%s.csv' % datetime.now().strftime("%Y_%m_%d_%H%M")
         writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-        writer.writerow(['A_name', 'B_like'])
+        writer.writerow(['A_group_name', 'B_member_name'])
 
         for idx, friend in enumerate(myfriends):
 
@@ -452,12 +476,44 @@ def generate_group_member(prefix):
             for person in their_friends:
                 writer.writerow([friend['name'], person.text])
 
+        print("Successfully saved to %s" % csvOut)
+
+    else:
+        print("Invalid filename .csv from the first contact list")
+
+
+def generate_follower(prefix):
+    filename = input("Enter the filename .csv from the first contact list: ")
+    if len(filename) > 0 and len(prefix) > 0:
+        print("Loading list from %s..." % filename)
+        myfriends = load_csv(filename)
+
+        # Prep CSV Output File
+        csvOut = prefix + 'follower_%s.csv' % datetime.now().strftime("%Y_%m_%d_%H%M")
+        writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+        writer.writerow(['A_following_name', 'B_follower_name'])
+
+        for friend in myfriends:
+
+            if "profile.php" in friend['profile']:
+                scrape_url = friend['profile'] + "&sk=followers"
+            else:
+                scrape_url = friend['profile'] + "/followers"
+
+            browser.get(scrape_url)
+            their_friends = scan_list_member_follower('//div[@class="x1iyjqo2 x1pi30zi"]/div[1]/a/span')
+
+            # Write friends to CSV File
+            for person in their_friends:
+                writer.writerow([friend['name'], person.text])
+
+        print("Successfully saved to %s" % csvOut)
+
     else:
         print("Invalid filename .csv from the first contact list")
 
 
 # --------------- Start Scraping ---------------
-now = datetime.now()
 configPath = "config.txt"
 if configPath:
     configObj = configparser.ConfigParser()
@@ -468,19 +524,22 @@ else:
     print('Enter the config path')
 fb_login(configObj)
 
-item_option = input("Enter number value 1 or 2 or 3 or 4 to generate list: ")
+item_option = input("Enter number value 1 or 2 or 3 or 4 or 5 to generate list: ")
 
 if item_option == "1":
-    scrape_1st_degrees("1st_")
-    generate_basic_info("1st_")
-    generate_user_like_1st("1st_")
+    scrape_1st_degrees("1_1_")
+    generate_basic_info("1_2_")
+    generate_user_like_1st("1_3_")
 elif item_option == "2":
-    scrape_2nd_degrees("2nd_")
-    generate_basic_info("2nd_")
+    scrape_2nd_degrees("2_1_")
+    generate_basic_info("2_2_")
 elif item_option == "3":
-    generate_user_like_2nd("2nd_")
+    generate_user_like_2nd("2_3_")
 elif item_option == "4":
-    generate_group_member("2nd_")
+    generate_group_member("3_1_")
+elif item_option == "5":
+    generate_follower("4_1_")
 else:
     print(
-        "Invalid # of arguments specified. Use none to scrape your 1st degree connections, or specify the name of the CSV file as the first argument.")
+        "Invalid # of arguments specified. Use none to scrape your 1st degree connections, or specify the name of the "
+        "CSV file as the first argument.")
