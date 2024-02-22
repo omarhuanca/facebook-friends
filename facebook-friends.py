@@ -38,8 +38,11 @@ def fb_login(credentials):
 # --------------- Scroll to bottom of page -----------------
 def generate_numerator(xpath_first_page_friend):
     numerator = 0
-    if len(xpath_first_page_friend) > 0:
-        numerator = browser.find_elements(By.XPATH, xpath_first_page_friend).__sizeof__()
+    try:
+        if len(xpath_first_page_friend) > 0:
+            numerator = browser.find_elements(By.XPATH, xpath_first_page_friend).__sizeof__()
+    except NoSuchElementException:
+        print("No Details")
 
     return numerator
 
@@ -112,28 +115,31 @@ def scrape_1st_degrees(prefix):
         writerGroup = csv.writer(open(csvOutGroup, 'w', encoding="utf-8"))
         writerGroup.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'B_profile'])
 
-        # Get your unique Facebook ID
-        profile_icon = browser.find_element(By.XPATH, "//div[@class='x1iyjqo2']/ul/li/div/a")
-        url_content = profile_icon.get_attribute("href")
-        unique_myid = get_profile_from_url(url_content)
+        try:
+            # Get your unique Facebook ID
+            profile_icon = browser.find_element(By.XPATH, '//div[@class="x1iyjqo2"]/ul/li/div/a')
+            url_content = profile_icon.get_attribute("href")
+            unique_myid = get_profile_from_url(url_content)
 
-        # Scan your Friends page (1st-degree friends)
-        print("Opening Friends page...")
-        browser.get("https://www.facebook.com/" + unique_myid + "/friends")
-        scroll_to_bottom('//div[@class="x1iyjqo2 x1pi30zi"]/div/a', 2)
-        # myfriends = scan_friends()
-        myfriends = generate_friend_list_dictionary()
+            # Scan your Friends page (1st-degree friends)
+            print("Opening Friends page...")
+            browser.get("https://www.facebook.com/" + unique_myid + "/friends")
+            scroll_to_bottom('//div[@class="x1iyjqo2 x1pi30zi"]/div/a', 2)
+            # myfriends = scan_friends()
+            myfriends = generate_friend_list_dictionary()
 
-        # Write friends to CSV File
-        for friend in myfriends:
-            if "groups" in friend['profile']:
-                writerGroup.writerow([unique_myid, "Me", friend['id'], friend['name'], friend['profile']])
-            else:
-                writer.writerow([unique_myid, "Me", friend['id'], friend['name'], friend['profile']])
+            # Write friends to CSV File
+            for friend in myfriends:
+                if "groups" in friend['profile']:
+                    writerGroup.writerow([unique_myid, "Me", friend['id'], friend['name'], friend['profile']])
+                else:
+                    writer.writerow([unique_myid, "Me", friend['id'], friend['name'], friend['profile']])
 
-        print("Successfully saved to %s" % csvOut)
-        print("Successfully saved to %s" % csvOutGroup)
+            print("Successfully saved to %s" % csvOut)
+            print("Successfully saved to %s" % csvOutGroup)
 
+        except NoSuchElementException:
+            print("No Details")
 
 def get_profile_from_url(url_value):
     unique_myid = ""
@@ -183,7 +189,7 @@ def filter_string(regex, potential_string):
 # This can take several days if you have a lot of friends!!
 def scrape_2nd_degrees(prefix):
     # Load friends from CSV Input File
-    filenameReader = input("Enter the filename .csv from the first contact list: ")
+    filenameReader = input("Enter the filename .csv from the contact list: ")
     if len(filenameReader) > 0 and len(prefix):
         print("Loading list from %s..." % filenameReader)
         myfriends = load_csv(filenameReader)
@@ -198,21 +204,23 @@ def scrape_2nd_degrees(prefix):
 
         for idx, friend in enumerate(myfriends):
             if search_name in friend['name'].lower():
+                try:
+                    # Load URL of friend's friend page
+                    scrape_url = "https://www.facebook.com/" + friend['uid'] + "/friends?source_ref=pb_friends_tl"
+                    browser.get(scrape_url)
 
-                # Load URL of friend's friend page
-                scrape_url = "https://www.facebook.com/" + friend['uid'] + "/friends?source_ref=pb_friends_tl"
-                browser.get(scrape_url)
+                    # Scan your friends' Friends page (2nd-degree friends)
+                    # print("%d) %s" % (idx + 1, scrape_url))
+                    print("name is found in your %d contact" % (idx + 1))
+                    scroll_to_bottom('//div[@class="x1iyjqo2 x1pi30zi"]/div/a', 2)
+                    their_friends = generate_friend_list_dictionary()
 
-                # Scan your friends' Friends page (2nd-degree friends)
-                # print("%d) %s" % (idx + 1, scrape_url))
-                print("name is found in your %d contact" % (idx + 1))
-                scroll_to_bottom('//div[@class="x1iyjqo2 x1pi30zi"]/div/a', 2)
-                their_friends = generate_friend_list_dictionary()
-
-                # Write friends to CSV File
-                print('Writing friends to CSV...')
-                for person in their_friends:
-                    writer.writerow([friend['uid'], friend['name'], person['id'], person['name'], person['profile']])
+                    # Write friends to CSV File
+                    print('Writing friends to CSV...')
+                    for person in their_friends:
+                        writer.writerow([friend['uid'], friend['name'], person['id'], person['name'], person['profile']])
+                except NoSuchElementException:
+                    print("No Details")
             else:
                 print("name is not found in your %d contact" % (idx + 1))
 
@@ -255,7 +263,7 @@ def get_info_basic_info(all_friends_date, all_friends_email, all_friends_gender,
                         all_friends_phone_number, all_friends_year, friend):
     sleep(randint(1, 3))
     information_list = browser.find_elements(By.XPATH,
-                                             "//div[@class='x78zum5 xdt5ytf xz62fqu x16ldp7u']/div[1]/span")
+                                             '//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]/span')
     ph_list = []
     url_value = friend['id']
     for pn_item in information_list:
@@ -283,8 +291,8 @@ def get_info_basic_info(all_friends_date, all_friends_email, all_friends_gender,
     sleep(2)
 
 
-def generate_user_like_2nd(prefix):
-    filenameReader = input("Enter the filename .csv from the second contact list: ")
+def generate_user_like_from_list(prefix):
+    filenameReader = input("Enter the filename .csv from contact list: ")
     if len(filenameReader) > 0 and len(prefix) > 0:
         print("Loading list from %s..." % filenameReader)
         myfriends = load_csv(filenameReader)
@@ -302,7 +310,7 @@ def generate_user_like_2nd(prefix):
 
                     scroll_to_bottom('//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]', 2)
                     information_list = browser.find_elements(By.XPATH,
-                                                             "//div[@class='x78zum5 xdt5ytf xz62fqu x16ldp7u']/div[1]/span")
+                                                             '//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]/span')
                     ph_list = []
                     for pn_item in information_list:
                         if len(pn_item.text) > 0:
@@ -310,6 +318,7 @@ def generate_user_like_2nd(prefix):
                     for pn_item in ph_list:
                         if not filter_no_like(pn_item):
                             item_list.append(pn_item)
+
                 response_list.append(item_list)
             except NoSuchElementException:
                 print("No Details")
@@ -348,7 +357,7 @@ def generate_like_1st():
 
                 scroll_to_bottom('//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]', 2)
                 information_list = browser.find_elements(By.XPATH,
-                                                         "//div[@class='x78zum5 xdt5ytf xz62fqu x16ldp7u']/div[1]/span")
+                                                         '//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]/span')
                 ph_list = []
                 for pn_item in information_list:
                     if len(pn_item.text) > 0:
@@ -455,7 +464,7 @@ def scan_list_member_follower(xpath_first_page_friend):
 
 
 def generate_group_member(prefix):
-    filename = input("Enter the filename .csv from the first contact group list: ")
+    filename = input("Enter the filename .csv from the contact group list: ")
     if len(filename) > 0 and len(prefix) > 0:
         print("Loading list from %s..." % filename)
         myfriends = load_csv(filename)
@@ -483,7 +492,7 @@ def generate_group_member(prefix):
 
 
 def generate_follower(prefix):
-    filename = input("Enter the filename .csv from the first contact list: ")
+    filename = input("Enter the filename .csv from the contact list: ")
     if len(filename) > 0 and len(prefix) > 0:
         print("Loading list from %s..." % filename)
         myfriends = load_csv(filename)
@@ -512,6 +521,31 @@ def generate_follower(prefix):
     else:
         print("Invalid filename .csv from the first contact list")
 
+def generate_following(prefix):
+    try:
+        profile_icon = browser.find_element(By.XPATH, '//div[@class="x1iyjqo2"]/ul/li/div/a')
+        url_profile = profile_icon.get_attribute("href")
+        unique_myid = get_profile_from_url(url_profile)
+
+        if "profile" in url_profile:
+            browser.get(url_profile + "&sk=following")
+        else:
+            browser.get(url_profile + "/following")
+
+        # Prep CSV Output File
+        csvOut = prefix + "following_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+        writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+        writer.writerow(['A_id', 'A_name', 'B_id', 'B_name', 'B_profile'])
+
+        following_list = browser.find_elements(By.XPATH, '//div[@class="x1iyjqo2 x1pi30zi"]/div[1]/a')
+        for item in following_list:
+            friend_url = item.get_attribute("href")
+            friend_uid = get_profile_from_url(friend_url)
+            writer.writerow([unique_myid, "Me", item.text, friend_uid, friend_url])
+
+        print("Successfully saved to %s" % csvOut)
+    except NoSuchElementException:
+        print("No Details")
 
 # --------------- Start Scraping ---------------
 configPath = "config.txt"
@@ -524,7 +558,7 @@ else:
     print('Enter the config path')
 fb_login(configObj)
 
-item_option = input("Enter number value 1 or 2 or 3 or 4 or 5 to generate list: ")
+item_option = input("Enter number value 1 or 2 or 3 or 4 or 5 or 6 or 7 to generate list: ")
 
 if item_option == "1":
     scrape_1st_degrees("1_1_")
@@ -534,11 +568,15 @@ elif item_option == "2":
     scrape_2nd_degrees("2_1_")
     generate_basic_info("2_2_")
 elif item_option == "3":
-    generate_user_like_2nd("2_3_")
+    generate_user_like_from_list("2_3_")
 elif item_option == "4":
     generate_group_member("3_1_")
 elif item_option == "5":
     generate_follower("4_1_")
+elif item_option == "6":
+    generate_following("5_1_")
+elif item_option == "7":
+    generate_user_like_from_list("5_2_")
 else:
     print(
         "Invalid # of arguments specified. Use none to scrape your 1st degree connections, or specify the name of the "
