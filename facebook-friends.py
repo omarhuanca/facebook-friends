@@ -547,6 +547,49 @@ def generate_following(prefix):
     except NoSuchElementException:
         print("No Details")
 
+def generatePostFromList(prefix):
+    filenameReader = input("Enter the filename .csv from contact list: ")
+    if len(filenameReader) > 0 and len(prefix) > 0:
+        print("Loading list from %s..." % filenameReader)
+        myfriends = load_csv(filenameReader)
+        response_list = []
+
+        for friend in myfriends:
+            each_link = friend['profile']
+            item_list = []
+            try:
+                if "groups" not in each_link:
+                    if "profile.php" in each_link:
+                        browser.get(url=f"{each_link}&v=timeline")
+                    else:
+                        browser.get(url=f"{each_link}?v=timeline")
+
+                    scroll_to_bottom('//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]', 2)
+                    information_list = browser.find_elements(By.XPATH,
+                                                             '//div[@class="xdj266r x11i5rnm xat24cr x1mh8g0r x1vvkbs x126k92a"]')
+                    item_list.append(friend['name'])
+
+                    for pn_item in information_list:
+                        item_list.append(pn_item.text)
+
+                    response_list.append(item_list)
+
+            except NoSuchElementException:
+                print("No Details")
+
+        write_list_post(response_list, prefix)
+
+
+def write_list_post(item_list, prefix):
+    if len(item_list) > 0 and len(prefix) > 0:
+        csvOut = prefix + "user_post_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+        writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+        writer.writerow(['Name', '[Post]'])
+        for item in item_list:
+            writer.writerow(item)
+
+        print("Successfully saved to %s" % csvOut)
+
 # --------------- Start Scraping ---------------
 configPath = "config.txt"
 if configPath:
@@ -558,7 +601,8 @@ else:
     print('Enter the config path')
 fb_login(configObj)
 
-item_option = input("Enter number value 1 or 2 or 3 or 4 or 5 or 6 or 7 to generate list: ")
+item_option = input("Enter number value 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 to generate list: ")
+
 
 if item_option == "1":
     scrape_1st_degrees("1_1_")
@@ -577,6 +621,8 @@ elif item_option == "6":
     generate_following("5_1_")
 elif item_option == "7":
     generate_user_like_from_list("5_2_")
+elif item_option == "8":
+    generatePostFromList("6_2_")
 else:
     print(
         "Invalid # of arguments specified. Use none to scrape your 1st degree connections, or specify the name of the "
