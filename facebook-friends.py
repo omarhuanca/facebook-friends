@@ -89,7 +89,6 @@ def scroll_to_bottom_two(css_first_page_friend, scrollPauseTime):
         # Wait to load page
         time.sleep(scrollPauseTime)
         counter = generate_numerator_css(css_first_page_friend)
-        #browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
 
 # --------------- Get list of all friends on page ---------------
@@ -136,7 +135,8 @@ def load_csv_two(filename):
         for idx, row in enumerate(reader):
             myfriends.append({
                 "name": row['B_name'],
-                "profile": row['B_profile']
+                "profile": row['B_profile'],
+                "username": get_profile_from_url(row['B_profile'])
             })
     print("%d friends in imported list" % (idx + 1))
     return myfriends
@@ -269,6 +269,44 @@ def scrape_2nd_degrees(prefix):
         print("Invalid filename .csv from the first contact list")
 
 
+def getListFriendFromFile(prefix):
+    # Load friends from CSV Input File
+    filenameReader = input("Enter the filename .csv from the contact list: ")
+    if len(filenameReader) > 0 and len(prefix):
+        print("Loading list from %s..." % filenameReader)
+        myfriends = load_csv_two(filenameReader)
+        print("------------------------------------------")
+
+        # Prep CSV Output File
+        csvOut = prefix + "user_friend_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+        writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+        writer.writerow(['A_name', 'B_name', 'B_like'])
+
+        for idx, friend in enumerate(myfriends):
+            try:
+                # Load URL of friend's friend page
+
+                scrape_url = "https://www.facebook.com/" + friend['username'] + "/friends?source_ref=pb_friends_tl"
+                browser.get(scrape_url)
+
+                # Scan your friends' Friends page (2nd-degree friends)
+                # print("%d) %s" % (idx + 1, scrape_url))
+                print("name is found in your %d contact" % (idx + 1))
+                scroll_to_bottom('//div[@class="x1iyjqo2 x1pi30zi"]/div/a', 2, 0.5)
+                their_friends = generate_friend_list_dictionary()
+
+                # Write friends to CSV File
+                print('Writing friends to CSV...')
+                for person in their_friends:
+                    writer.writerow([friend['name'], person['name'], person['profile']])
+                    #print([friend['name'], person['name'], person['profile']])
+            except NoSuchElementException:
+                print("No Details")
+
+        print("Successfully saved to %s" % csvOut)
+    else:
+        print("Invalid filename .csv from the first contact list")
+
 # Collecting FB data: [ Names, FB Profile Links, Phone Number, Gender, Birth Day ]
 def get_data_info():
     all_friends_phone_number = []
@@ -294,10 +332,53 @@ def get_data_info():
 
         except NoSuchElementException:
             print("No Details")
-            continue
-    return all_friends_phone_number, all_friends_email, all_friends_gender, all_friends_date, all_friends_year,\
-           all_friends_language
 
+def getDataInfoFromFile(prefix):
+    all_friends_phone_number = []
+    all_friends_email = []
+    all_friends_gender = []
+    all_friends_date = []
+    all_friends_year = []
+    all_friends_language = []
+    all_friends_website = []
+    # Have to separate each link, because some of profile links have username, and others just default fb numbers
+
+    csvOut = prefix + "basic_info_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+    writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+    writer.writerow(['Name', 'Mobile', 'Email', 'Gender', 'Birthday', 'Year', 'Language', 'Website'])
+
+    filenameReader = input("Enter the filename .csv: ")
+    print("Loading list from %s..." % filenameReader)
+    myfriends = load_csv_two(filenameReader)
+
+    for friend in myfriends:
+        each_link = friend['profile']
+        try:
+            if "profile.php" in each_link:
+                browser.get(url=f"{each_link}&sk=about_contact_and_basic_info")
+                readBasicInfo(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
+                              all_friends_phone_number, all_friends_year, all_friends_website, friend)
+
+            elif "groups" not in each_link:
+                browser.get(url=f"{each_link}/about_contact_and_basic_info")
+                readBasicInfo(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
+                              all_friends_phone_number, all_friends_year, all_friends_website, friend)
+
+        except NoSuchElementException:
+            print("No Details")
+
+
+    for friend in myfriends:
+        username = friend['username']
+        date = getValueFromArray(username, all_friends_date)
+        email = getValueFromArray(username, all_friends_email)
+        gender = getValueFromArray(username, all_friends_gender)
+        language = getValueFromArray(username, all_friends_language)
+        phoneNumber = getValueFromArray(username, all_friends_phone_number)
+        year = getValueFromArray(username, all_friends_year)
+        website = getValueFromArray(username, all_friends_website)
+        #print([username, phoneNumber, email, gender, date, year, language, website])
+        writer.writerow([username, phoneNumber, email, gender, date, year, language, website])
 
 def get_info_basic_info(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
                         all_friends_phone_number, all_friends_year, friend):
@@ -329,6 +410,38 @@ def get_info_basic_info(all_friends_date, all_friends_email, all_friends_gender,
             item_year = ph_list.index(pn_item) - 1
             all_friends_language.append({url_value: ph_list[item_year]})
     sleep(2)
+
+def readBasicInfo(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
+                  all_friends_phone_number, all_friends_year, all_friends_website, friend):
+    information_list = browser.find_elements(By.XPATH,
+                                             '//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]/span')
+    ph_list = []
+    username = friend['username']
+    for pn_item in information_list:
+        if len(pn_item.text) > 0:
+            ph_list.append(pn_item.text)
+    for pn_item in ph_list:
+        if pn_item == "Mobile":
+            item_id = ph_list.index(pn_item) - 1
+            all_friends_phone_number.append({username: ph_list[item_id]})
+        if pn_item == "Email":
+            item_id = ph_list.index(pn_item) - 1
+            all_friends_email.append({username: ph_list[item_id]})
+        if pn_item == "Gender":
+            item_info = ph_list.index(pn_item) - 1
+            all_friends_gender.append({username: ph_list[item_info]})
+        if pn_item == "Birth date":
+            item_date = ph_list.index(pn_item) - 1
+            all_friends_date.append({username: ph_list[item_date]})
+        if pn_item == "Birth year":
+            item_year = ph_list.index(pn_item) - 1
+            all_friends_year.append({username: ph_list[item_year]})
+        if pn_item == "Languages":
+            item_language = ph_list.index(pn_item) - 1
+            all_friends_language.append({username: ph_list[item_language]})
+        if pn_item == "Website":
+            itemWebsite = ph_list.index(pn_item) - 1
+            all_friends_website.append({username: ph_list[itemWebsite]})
 
 
 def generate_user_like_from_list(prefix):
@@ -365,6 +478,47 @@ def generate_user_like_from_list(prefix):
 
         write_list_like(response_list, prefix)
 
+def getLikeFromFile(prefix):
+    filenameReader = input("Enter the filename .csv from contact list: ")
+    if len(filenameReader) > 0 and len(prefix) > 0:
+        print("Loading list from %s..." % filenameReader)
+        myfriends = load_csv_two(filenameReader)
+        response_list = []
+
+        for friend in myfriends:
+            each_link = friend['profile']
+            item_list = []
+            try:
+                if "groups" not in each_link:
+                    if "profile.php" in each_link:
+                        browser.get(url=f"{each_link}&sk=likes")
+                    else:
+                        browser.get(url=f"{each_link}/likes")
+
+                    scroll_to_bottom('//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]', 2, 0.5)
+                    #scroll_to_bottom_two('div[class="xyamay9 x1pi30zi x1l90r2v x1swvt13"] > div[class="x78zum5 x1q0g3np x1a02dak"] > div', 1)
+                    #information_list = browser.find_elements(By.XPATH, '//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]/span')
+                    information_list = browser.find_elements(By.CSS_SELECTOR, 'div[class="xyamay9 x1pi30zi x1l90r2v x1swvt13"] > div[class="x78zum5 x1q0g3np x1a02dak"] > div')
+                    print(len(information_list))
+                    for pn_item in information_list:
+                        item = pn_item.find_element(By.CSS_SELECTOR, 'div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]')
+                        print(item.text)
+                        response_list.append(Like(friend['name'], item.text))
+
+                #response_list.append(item_list)
+
+            except NoSuchElementException:
+                print("No Details")
+
+        csvOut = prefix + "user_like_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+        writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+        writer.writerow(['Name', 'Like'])
+
+        for itemLike in response_list:
+            #print(itemLike)
+            writer.writerow([itemLike])
+
+        print("Successfully saved to %s" % csvOut)
 
 def generate_user_like_1st(prefix):
     item_list = generate_like_1st()
@@ -452,6 +606,41 @@ def generate_basic_info(prefix):
         writer.writerow(['Name', 'Link', 'Mobile', 'Email', 'Gender', 'Birthday', 'Year', 'Language'])
         for dictionary in dictionary_list:
             username = dictionary['id']
+
+            fb_name_i = dictionary['name']
+            fb_link_i = dictionary['profile']
+            fb_number_i = getValueFromArray(username, fb_numbers)
+            fb_email_i = getValueFromArray(username, fb_emails)
+            fb_gender_i = getValueFromArray(username, fb_genders)
+            fb_birth_date_i = getValueFromArray(username, fb_birth_dates)
+            fb_birth_year_i = getValueFromArray(username, fb_birth_years)
+            fb_language_i = getValueFromArray(username, fb_languages)
+
+            writer.writerow(
+                [fb_name_i, fb_link_i, fb_number_i, fb_email_i, fb_gender_i, fb_birth_date_i, fb_birth_year_i,
+                 fb_language_i])
+
+        print("Successfully saved to %s" % csvOut)
+
+
+def getValueFromArray(username, arrayValue):
+    itemValue = ""
+    if contain_key_dictionary(username, arrayValue):
+        itemValue = get_value_dictionary(username, arrayValue)
+    return itemValue
+
+
+def getBasicInfoFromFile(prefix):
+    dictionary_list = generate_friend_list_dictionary()
+    fb_numbers, fb_emails, fb_genders, fb_birth_dates, fb_birth_years, fb_languages = get_data_info()
+    sleep(randint(4, 8))
+
+    if len(prefix) > 0:
+        csvOut = prefix + "basic_info_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+        writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+        #writer.writerow(['Name', 'Link', 'Mobile', 'Email', 'Gender', 'Birthday', 'Year', 'Language'])
+        for dictionary in dictionary_list:
+            username = dictionary['id']
             fb_number_i = ""
             fb_email_i = ""
             fb_gender_i = ""
@@ -474,9 +663,6 @@ def generate_basic_info(prefix):
             if contain_key_dictionary(username, fb_languages):
                 fb_language_i = get_value_dictionary(username, fb_languages)
 
-            writer.writerow(
-                [fb_name_i, fb_link_i, fb_number_i, fb_email_i, fb_gender_i, fb_birth_date_i, fb_birth_year_i,
-                 fb_language_i])
 
         print("Successfully saved to %s" % csvOut)
 
@@ -686,6 +872,13 @@ class Publication:
     def __str__(self):
         return self._name + ',' + self._publicationName
 
+class Like:
+    def __init__(self, name, nameLike):
+        self._name = name
+        self._nameLike = nameLike
+
+    def __str__(self):
+        return self._name + ',' + self._nameLike
 
 def write_list_post(item_list, prefix):
     if len(item_list) > 0 and len(prefix) > 0:
@@ -708,7 +901,7 @@ else:
     print('Enter the config path')
 fb_login(configObj)
 
-item_option = input("Enter number value 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 to generate list: ")
+item_option = input("Enter number value 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 to generate list: ")
 
 
 if item_option == "1":
@@ -732,6 +925,12 @@ elif item_option == "8":
     generatePostFromList("6_1_", 10)
 elif item_option == "9":
     generatePostFromList("7_1_", 20)
+elif item_option == "10":
+    getListFriendFromFile("8_1_")
+elif item_option == "11":
+    getDataInfoFromFile("11_1_")
+elif item_option == "12":
+    getLikeFromFile("12_1_")
 else:
     print(
         "Invalid # of arguments specified. Use none to scrape your 1st degree connections, or specify the name of the "
