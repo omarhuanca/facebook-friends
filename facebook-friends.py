@@ -24,7 +24,7 @@ wd_options.add_argument("--disable-infobars")
 wd_options.add_argument("--mute-audio")
 # wd_options.add_argument("--headless")
 browser = webdriver.Chrome(options=wd_options)
-#browser.implicitly_wait(10)
+#browser.implicitly_wait(3)
 
 
 # --------------- Ask user to log in -----------------
@@ -49,6 +49,7 @@ def generate_numerator(xpath_first_page_friend):
 
     return numerator
 
+
 def generate_numerator_css(xpath_first_page_friend):
     numerator = 0
     try:
@@ -61,7 +62,6 @@ def generate_numerator_css(xpath_first_page_friend):
 
 
 def scroll_to_bottom(xpath_first_page_friend, denominator, scrollPauseTime):
-
     numerator = generate_numerator(xpath_first_page_friend)
     quantity = numerator // denominator
 
@@ -79,7 +79,6 @@ def scroll_to_bottom(xpath_first_page_friend, denominator, scrollPauseTime):
 
 
 def scroll_to_bottom_two(css_first_page_friend, scrollPauseTime):
-
     numerator = generate_numerator_css(css_first_page_friend)
     counter = 0
     # Get scroll height
@@ -89,6 +88,7 @@ def scroll_to_bottom_two(css_first_page_friend, scrollPauseTime):
         # Wait to load page
         time.sleep(scrollPauseTime)
         counter = generate_numerator_css(css_first_page_friend)
+        browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
 
 # --------------- Get list of all friends on page ---------------
@@ -128,6 +128,7 @@ def load_csv(filename):
     print("%d friends in imported list" % (idx + 1))
     return myfriends
 
+
 def load_csv_two(filename):
     myfriends = []
     with open(filename, 'rt', encoding="utf-8") as input_csv:
@@ -140,7 +141,6 @@ def load_csv_two(filename):
             })
     print("%d friends in imported list" % (idx + 1))
     return myfriends
-
 
 
 # --------------- Scrape 1st degree friends ---------------
@@ -180,6 +180,7 @@ def scrape_1st_degrees(prefix):
 
         except NoSuchElementException:
             print("No Details")
+
 
 def get_profile_from_url(url_value):
     unique_myid = ""
@@ -224,6 +225,16 @@ def filter_string(regex, potential_string):
 
     return split_response
 
+def filter_string_two(regex, potential_string):
+    split_response = ''
+    if len(potential_string) > 0 and len(regex) > 0:
+        regex_string = re.search(regex, potential_string)
+        if regex_string is not None:
+            split_string = potential_string[:regex_string.start()] + potential_string[regex_string.end():]
+            split_response = split_string[:regex_string.end() -1]
+
+    return split_response
+
 
 # --------------- Scrape 2nd degree friends. ---------------
 # This can take several days if you have a lot of friends!!
@@ -258,7 +269,8 @@ def scrape_2nd_degrees(prefix):
                     # Write friends to CSV File
                     print('Writing friends to CSV...')
                     for person in their_friends:
-                        writer.writerow([friend['uid'], friend['name'], person['id'], person['name'], person['profile']])
+                        writer.writerow(
+                            [friend['uid'], friend['name'], person['id'], person['name'], person['profile']])
                 except NoSuchElementException:
                     print("No Details")
             else:
@@ -299,13 +311,14 @@ def getListFriendFromFile(prefix):
                 print('Writing friends to CSV...')
                 for person in their_friends:
                     writer.writerow([friend['name'], person['name'], person['profile']])
-                    #print([friend['name'], person['name'], person['profile']])
+                    # print([friend['name'], person['name'], person['profile']])
             except NoSuchElementException:
                 print("No Details")
 
         print("Successfully saved to %s" % csvOut)
     else:
         print("Invalid filename .csv from the first contact list")
+
 
 # Collecting FB data: [ Names, FB Profile Links, Phone Number, Gender, Birth Day ]
 def get_data_info():
@@ -332,6 +345,7 @@ def get_data_info():
 
         except NoSuchElementException:
             print("No Details")
+
 
 def getDataInfoFromFile(prefix):
     all_friends_phone_number = []
@@ -367,7 +381,6 @@ def getDataInfoFromFile(prefix):
         except NoSuchElementException:
             print("No Details")
 
-
     for friend in myfriends:
         username = friend['username']
         date = getValueFromArray(username, all_friends_date)
@@ -377,8 +390,9 @@ def getDataInfoFromFile(prefix):
         phoneNumber = getValueFromArray(username, all_friends_phone_number)
         year = getValueFromArray(username, all_friends_year)
         website = getValueFromArray(username, all_friends_website)
-        #print([username, phoneNumber, email, gender, date, year, language, website])
+        # print([username, phoneNumber, email, gender, date, year, language, website])
         writer.writerow([username, phoneNumber, email, gender, date, year, language, website])
+
 
 def get_info_basic_info(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
                         all_friends_phone_number, all_friends_year, friend):
@@ -410,6 +424,7 @@ def get_info_basic_info(all_friends_date, all_friends_email, all_friends_gender,
             item_year = ph_list.index(pn_item) - 1
             all_friends_language.append({url_value: ph_list[item_year]})
     sleep(2)
+
 
 def readBasicInfo(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
                   all_friends_phone_number, all_friends_year, all_friends_website, friend):
@@ -478,6 +493,7 @@ def generate_user_like_from_list(prefix):
 
         write_list_like(response_list, prefix)
 
+
 def getLikeFromFile(prefix):
     filenameReader = input("Enter the filename .csv from contact list: ")
     if len(filenameReader) > 0 and len(prefix) > 0:
@@ -487,7 +503,6 @@ def getLikeFromFile(prefix):
 
         for friend in myfriends:
             each_link = friend['profile']
-            item_list = []
             try:
                 if "groups" not in each_link:
                     if "profile.php" in each_link:
@@ -496,29 +511,103 @@ def getLikeFromFile(prefix):
                         browser.get(url=f"{each_link}/likes")
 
                     scroll_to_bottom('//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]', 2, 0.5)
-                    #scroll_to_bottom_two('div[class="xyamay9 x1pi30zi x1l90r2v x1swvt13"] > div[class="x78zum5 x1q0g3np x1a02dak"] > div', 1)
-                    #information_list = browser.find_elements(By.XPATH, '//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]/span')
-                    information_list = browser.find_elements(By.CSS_SELECTOR, 'div[class="xyamay9 x1pi30zi x1l90r2v x1swvt13"] > div[class="x78zum5 x1q0g3np x1a02dak"] > div')
+                    # scroll_to_bottom_two('div[class="xyamay9 x1pi30zi x1l90r2v x1swvt13"] > div[class="x78zum5 x1q0g3np x1a02dak"] > div', 1)
+                    # information_list = browser.find_elements(By.XPATH, '//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]/span')
+                    information_list = browser.find_elements(By.CSS_SELECTOR,
+                                                             'div[class="xyamay9 x1pi30zi x1l90r2v x1swvt13"] > div[class="x78zum5 x1q0g3np x1a02dak"] > div')
                     print(len(information_list))
                     for pn_item in information_list:
                         item = pn_item.find_element(By.CSS_SELECTOR, 'div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]')
-                        print(item.text)
+                        #print(item.text)
                         response_list.append(Like(friend['name'], item.text))
 
-                #response_list.append(item_list)
+                # response_list.append(item_list)
 
             except NoSuchElementException:
                 print("No Details")
 
-        csvOut = prefix + "user_like_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
-        writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-        writer.writerow(['Name', 'Like'])
+        #csvOut = prefix + "user_like_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+        #writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+        #writer.writerow(['Name', 'Like'])
 
         for itemLike in response_list:
-            #print(itemLike)
-            writer.writerow([itemLike])
+            print(itemLike)
+            #writer.writerow([itemLike])
 
-        print("Successfully saved to %s" % csvOut)
+        #print("Successfully saved to %s" % csvOut)
+
+
+def splitUsernameGroup(valueLink):
+    username = ""
+    if len(valueLink) > 0:
+        if "profile.php" in valueLink:
+            username = filter_string_two(r"[&]", valueLink)
+        else:
+            username = filter_string_two(r"[?]", valueLink)
+
+    return username
+
+def getLikeFromFileGroup(prefix):
+    #filenameReader = input("Enter the filename .csv from contact list: ")
+    filenameReader = "13_1_group_2024_03_07_1208.csv"
+    if len(filenameReader) > 0 and len(prefix) > 0:
+        print("Loading list from %s..." % filenameReader)
+        myfriends = load_csv_two(filenameReader)
+        response_list = []
+        csvOut = prefix + "user_like_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+        writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+        writer.writerow(['name', 'B_name','B_like'])
+
+        try:
+            for friend in myfriends:
+                each_link = getValidUserLink(friend['profile'])
+                if "profile.php" in each_link:
+                    browser.get(url=f"{each_link}&sk=likes")
+                else:
+                    browser.get(url=f"{each_link}/likes")
+
+                scroll_to_bottom('//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]', 2, 0.5)
+                selectorPublisher = 'div[class="xyamay9 x1pi30zi x1l90r2v x1swvt13"] > div[class="x78zum5 x1q0g3np x1a02dak"] > div[class="x9f619 x1r8uery x1iyjqo2 x6ikm8r x10wlt62 x1n2onr6"] > div'
+                if findElement(browser, selectorPublisher):
+                    information_list = browser.find_elements(By.CSS_SELECTOR, selectorPublisher)
+                    for pn_item in information_list:
+                        selectorSpan = 'div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]'
+                        valueSpan = ""
+                        if findElement(pn_item, selectorSpan):
+                            item = pn_item.find_element(By.CSS_SELECTOR, selectorSpan)
+                            valueSpan = item.text
+                        selectorLink = 'a[class="x1i10hfl xjbqb8w x1ejq31n xd10rxx x1sy0etr x17r0tee x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x1ypdohk xt0psk2 xe8uvvx xdj266r x11i5rnm xat24cr x1mh8g0r xexx8yu x4uap5 x18d9i69 xkhd6sd x16tdsg8 x1hl2dhg xggy1nq x1a2a7pz x1heor9g xt0b8zv"]'
+                        valueLink = ""
+                        if findElement(pn_item, selectorLink):
+                            item = pn_item.find_element(By.CSS_SELECTOR, selectorLink)
+                            valueLink = item.get_attribute("href")
+
+                        #print([friend['name'], valueSpan, valueLink])
+                        writer.writerow([friend['name'], valueSpan, valueLink])
+
+
+        except NoSuchElementException:
+            print("No Details")
+
+
+def getValidUserLink(each_link):
+    partUsername = ""
+    browser.get(url=f"{each_link}")
+    scroll_to_bottom_two('div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div div[class="x1cy8zhl x78zum5 x1q0g3np xod5an3 x1pi30zi x1swvt13 xz9dl7a"] > div[class="x1iyjqo2"] > div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"] > div', 1)
+    #listPublication = browser.find_elements(By.CSS_SELECTOR, 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div div[class="x1cy8zhl x78zum5 x1q0g3np xod5an3 x1pi30zi x1swvt13 xz9dl7a"] > div[class="x1iyjqo2"] > div > div  > span > h2 > span > strong > span')
+    listPublication = browser.find_elements(By.CSS_SELECTOR, 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div div[class="x1cy8zhl x78zum5 x1q0g3np xod5an3 x1pi30zi x1swvt13 xz9dl7a"] > div[class="x1iyjqo2"] > div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"] > div')
+    selectorName = 'a[class="x1i10hfl xjbqb8w x1ejq31n xd10rxx x1sy0etr x17r0tee x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x1ypdohk xt0psk2 xe8uvvx xdj266r x11i5rnm xat24cr x1mh8g0r xexx8yu x4uap5 x18d9i69 xkhd6sd x16tdsg8 x1hl2dhg xggy1nq x1a2a7pz xt0b8zv xzsf02u x1s688f"]'
+    try:
+        for publication in listPublication:
+            if findElement(publication, selectorName):
+                link = publication.find_element(By.CSS_SELECTOR, selectorName)
+                if link.get_attribute("href") is not None:
+                    valueLink = link.get_attribute("href")
+                    partUsername = splitUsernameGroup(valueLink)
+    except NoSuchElementException:
+        sys.stdout.write("")
+
+    return partUsername
 
 def generate_user_like_1st(prefix):
     item_list = generate_like_1st()
@@ -638,7 +727,7 @@ def getBasicInfoFromFile(prefix):
     if len(prefix) > 0:
         csvOut = prefix + "basic_info_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
         writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-        #writer.writerow(['Name', 'Link', 'Mobile', 'Email', 'Gender', 'Birthday', 'Year', 'Language'])
+        # writer.writerow(['Name', 'Link', 'Mobile', 'Email', 'Gender', 'Birthday', 'Year', 'Language'])
         for dictionary in dictionary_list:
             username = dictionary['id']
             fb_number_i = ""
@@ -662,7 +751,6 @@ def getBasicInfoFromFile(prefix):
                 fb_birth_year_i = get_value_dictionary(username, fb_birth_years)
             if contain_key_dictionary(username, fb_languages):
                 fb_language_i = get_value_dictionary(username, fb_languages)
-
 
         print("Successfully saved to %s" % csvOut)
 
@@ -716,6 +804,68 @@ def generate_group_member(prefix):
     else:
         print("Invalid filename .csv from the first contact list")
 
+def getUsernameFromGroup(url_value):
+    valueNumber = ""
+    if len(url_value):
+        valueUsername = filter_string(r"user{1}", url_value)
+        valueNumber = valueUsername.replace("/", "")
+
+    return valueNumber
+
+def existItemProfileIntoArray(link, arrayMember):
+    arrayFlag = []
+    for item in arrayMember:
+        #arrayFlag.append(item.verifySameProfile(link))
+        arrayFlag.append(item == link)
+
+    flag = True in arrayFlag
+
+    return flag
+
+
+def getMemberFromGroup(prefix):
+    filename = input("Enter the filename .csv from the contact group list: ")
+    if len(filename) > 0 and len(prefix) > 0:
+        print("Loading list from %s..." % filename)
+        myfriends = load_csv_two(filename)
+        print("------------------------------------------")
+        # Prep CSV Output File
+        csvOut = prefix + 'group_%s.csv' % datetime.now().strftime("%Y_%m_%d_%H%M")
+        writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+        writer.writerow(['A_name', 'B_name', 'B_profile'])
+        for idx, friend in enumerate(myfriends):
+
+            scrape_url = "https://www.facebook.com/" + friend['username'] + "/members"
+            browser.get(scrape_url)
+            scroll_to_bottom('//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]', 1, 0.5)
+            #scroll_to_bottom_two('div[class="x1n2onr6 x1ja2u2z x9f619 x78zum5 xdt5ytf x2lah0s x193iq5w xx6bls6 x1jx94hy"] > div > div > div[class="html-div xe8uvvx x11i5rnm x1mh8g0r xexx8yu x4uap5 x18d9i69 xkhd6sd x1oo3vh0 x1rdy4ex"] > div[data-visualcompletion="ignore-dynamic"]', 3)
+            listMember = browser.find_elements(By.CSS_SELECTOR,
+                                               'div[class="html-div xe8uvvx x11i5rnm x1mh8g0r xexx8yu x4uap5 x18d9i69 xkhd6sd x1oo3vh0 x1rdy4ex"] > div[data-visualcompletion="ignore-dynamic"] > div[class="x1lq5wgf xgqcy7u x30kzoy x9jhf4c x1lliihq"] > div[class="x6s0dn4 x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1q0g3np x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r xeuugli x18d9i69 x1sxyh0 xurb0ha xexx8yu x1n2onr6 x1ja2u2z x1gg8mnh"] > div[class="x6s0dn4 xkh2ocl x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1q0g3np x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r x2lwn1j xeuugli x18d9i69 x4uap5 xkhd6sd xexx8yu x1n2onr6 x1ja2u2z"] > div[class="x1qjc9v5 x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1r8uery xdt5ytf x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r x2lwn1j xeuugli x4uap5 xkhd6sd xz9dl7a xsag5q8 x1n2onr6 x1ja2u2z"]> div div[class="xu06os2 x1ok221b"]')
+
+            # Write friends to CSV File
+            arrayMember = []
+            for item in listMember:
+                selectorName = 'span[class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x41vudc x6prxxf xvq8zen xk50ysn xzsf02u x1yc453h"]'
+                if findElement(item, selectorName):
+                    memberName = item.find_element(By.CSS_SELECTOR, selectorName)
+                    selectorLink = 'span a[class="x1i10hfl xjbqb8w x1ejq31n xd10rxx x1sy0etr x17r0tee x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x1ypdohk xt0psk2 xe8uvvx xdj266r x11i5rnm xat24cr x1mh8g0r xexx8yu x4uap5 x18d9i69 xkhd6sd x16tdsg8 x1hl2dhg xggy1nq x1a2a7pz xt0b8zv xzsf02u x1s688f"]'
+                    memberProfile = memberName.find_element(By.CSS_SELECTOR, selectorLink)
+                    link = getUsernameFromGroup(memberProfile.get_attribute("href"))
+                    linkUrl = "https://www.facebook.com/" + link
+                    if not existItemProfileIntoArray(link, arrayMember):
+                        #arrayMember.append(Member(friend['name'], memberName.text, linkUrl))
+                        arrayMember.append([friend['name'], memberName.text, linkUrl])
+
+            for member in arrayMember:
+                writer.writerow(member)
+
+            arrayMember = []
+
+        print("Successfully saved to %s" % csvOut)
+
+    else:
+        print("Invalid filename .csv from the first contact list")
+
 
 def generate_follower(prefix):
     filename = input("Enter the filename .csv from the contact list: ")
@@ -746,6 +896,7 @@ def generate_follower(prefix):
 
     else:
         print("Invalid filename .csv from the first contact list")
+
 
 def generate_following(prefix):
     try:
@@ -782,6 +933,7 @@ def findElementChild(item, selectorName, selectorOtherName):
 
     return content
 
+
 def findElement(item, selectorName):
     flag = False
     try:
@@ -792,11 +944,18 @@ def findElement(item, selectorName):
 
     return flag
 
+def existProperty(item, property):
+    flag = False
+    try:
+        item.get_attribute(property)
+        return not flag
+    except Exception:
+        sys.stdout.write("")
 
-def filterPublication(content, arrayPost):
+def existItemNameIntoArray(content, arrayPost):
     arrayFlag = []
     for post in arrayPost:
-        arrayFlag.append(post.verifySamePublication(content))
+        arrayFlag.append(post.verifySameName(content))
 
     flag = True in arrayFlag
 
@@ -824,19 +983,20 @@ def generatePostFromList(prefix, numberIteration):
                     browser.get(url=f"{each_link}?v=timeline")
 
                 posts = 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div'
-                #posts = 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div > div[class="x1yztbdb x1n2onr6 xh8yej3 x1ja2u2z"] > div div[class="x1cy8zhl x78zum5 x1q0g3np xod5an3 x1pi30zi x1swvt13 xz9dl7a"]'
+                # posts = 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div > div[class="x1yztbdb x1n2onr6 xh8yej3 x1ja2u2z"] > div div[class="x1cy8zhl x78zum5 x1q0g3np xod5an3 x1pi30zi x1swvt13 xz9dl7a"]'
                 counter = 0
                 arrayPublication = []
                 while counter <= int(numberIteration):
                     counter = counter + 1
                     scroll_to_bottom_two(posts, 3)
 
-                    listPost = browser.find_elements(By.CSS_SELECTOR, 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div')
-                    #listPost = browser.find_elements(By.CSS_SELECTOR, 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div > div[class="x1yztbdb x1n2onr6 xh8yej3 x1ja2u2z"]')
+                    listPost = browser.find_elements(By.CSS_SELECTOR,
+                                                     'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div')
+                    # listPost = browser.find_elements(By.CSS_SELECTOR, 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div > div[class="x1yztbdb x1n2onr6 xh8yej3 x1ja2u2z"]')
                     for post in listPost:
                         selectorName = 'blockquote[class="xckqwgs x26u7qi x7g060r x1gslohp x11i5rnm xieb3on x1pi30zi x1swvt13 x1d52u69"]'
                         selectorOtherName = 'div[data-ad-comet-preview="message"]'
-                        #selectorOtherName = 'span[class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x41vudc x6prxxf xvq8zen xo1l8bm xzsf02u x1yc453h"]'
+                        # selectorOtherName = 'span[class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x41vudc x6prxxf xvq8zen xo1l8bm xzsf02u x1yc453h"]'
 
                         selector = ''
 
@@ -847,30 +1007,35 @@ def generatePostFromList(prefix, numberIteration):
 
                         if len(selector) > 0:
                             content = post.find_element(By.CSS_SELECTOR, selector)
-                            if not filterPublication(content.text, arrayPublication):
+                            if not existItemNameIntoArray(content.text, arrayPublication):
                                 arrayPublication.append(Publication(friend['name'], content.text))
 
-                    #arrayFriend.append(arrayPublication)
+                    # arrayFriend.append(arrayPublication)
 
                 for publication in arrayPublication:
-                    #print(publication, end="\n\n")
+                    # print(publication, end="\n\n")
                     writer.writerow([publication])
 
                 arrayPublication = []
 
 
-class Publication:
+class PrintObject:
+    def verifySameName(self, potencialName):
+        pass
+
+
+class Publication(PrintObject):
 
     def __init__(self, name, publicationName):
         self._name = name
         self._publicationName = publicationName
 
-    def verifySamePublication(self, potencialPublication):
-        return self._publicationName == potencialPublication
-
+    def verifySameName(self, potencialName):
+        return self._publicationName == potencialName
 
     def __str__(self):
         return self._name + ',' + self._publicationName
+
 
 class Like:
     def __init__(self, name, nameLike):
@@ -879,6 +1044,24 @@ class Like:
 
     def __str__(self):
         return self._name + ',' + self._nameLike
+
+
+class Member(PrintObject):
+
+    def __init__(self, nameGroup, nameMember, profileLink):
+        self._nameGroup = nameGroup
+        self._nameMember = nameMember
+        self._profileLink = profileLink
+
+    def verifySameName(self, potencialName):
+        return self._nameMember == potencialName
+
+    def verifySameProfile(self, potencialProfile):
+        return self._profileLink == potencialProfile
+
+    def __str__(self):
+        return f"{self._nameGroup},{self._nameMember},{self._profileLink}"
+
 
 def write_list_post(item_list, prefix):
     if len(item_list) > 0 and len(prefix) > 0:
@@ -889,6 +1072,7 @@ def write_list_post(item_list, prefix):
             writer.writerow(item)
 
         print("Successfully saved to %s" % csvOut)
+
 
 # --------------- Start Scraping ---------------
 configPath = "config.txt"
@@ -901,8 +1085,8 @@ else:
     print('Enter the config path')
 fb_login(configObj)
 
-item_option = input("Enter number value 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 to generate list: ")
-
+item_option = input(
+    "Enter number value 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14 to generate list: ")
 
 if item_option == "1":
     scrape_1st_degrees("1_1_")
@@ -931,6 +1115,10 @@ elif item_option == "11":
     getDataInfoFromFile("11_1_")
 elif item_option == "12":
     getLikeFromFile("12_1_")
+elif item_option == "13":
+    getMemberFromGroup("13_1_")
+elif item_option == "14":
+    getLikeFromFileGroup("14_1_")
 else:
     print(
         "Invalid # of arguments specified. Use none to scrape your 1st degree connections, or specify the name of the "
