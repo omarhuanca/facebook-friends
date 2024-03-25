@@ -1197,6 +1197,43 @@ def searchAccountFromFile(prefix):
             sys.stdout.write("")
 
 
+def searchAccountFromFile(prefix):
+    filenameReader = "votantes_pocitos.csv"
+    if len(filenameReader) > 0:
+        listFileRow = loadCustomCsv(filenameReader, "B_lastname", "B_second_lastname", "B_firstname", "B_middlename")
+
+        try:
+            csvOut = prefix + "found_user_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+            writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+            writer.writerow(['B_name', 'B_profile'])
+
+            for fileRow in listFileRow:
+                browser.get(url=f"https://www.facebook.com/search/top/?q={fileRow}")
+                sleep(5)
+                arrayPotentialContact = []
+                selectorList = 'div[class="x1n2onr6 x1ja2u2z x9f619 x78zum5 xdt5ytf x2lah0s x193iq5w xwib8y2 x1y1aw1k"] > div[class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x1iyjqo2 x2lwn1j"] > div[class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x2lah0s x193iq5w"]'
+                if findElement(browser, selectorList):
+                    listPotentialContact = browser.find_elements(By.CSS_SELECTOR, selectorList)
+                    selectorName = 'div span[class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1tu3fi x41vudc x1lkfr7t x1lbecb7 xk50ysn xzsf02u x1yc453h"]'
+                    selectorLink = 'div span[class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1tu3fi x41vudc x1lkfr7t x1lbecb7 xk50ysn xzsf02u x1yc453h"] > div > a'
+                    for potentialContact in listPotentialContact:
+                        if findElement(potentialContact, selectorName):
+                            nameContact = potentialContact.find_element(By.CSS_SELECTOR, selectorName)
+                            urlLink = potentialContact.find_element(By.CSS_SELECTOR, selectorLink)
+                            valueUrl = urlLink.get_attribute("href")
+                            if "groups" not in valueUrl:
+                                if not existItemNameIntoArray(valueUrl, arrayPotentialContact):
+                                    arrayPotentialContact.append(PotentialContactProfile(nameContact.text, valueUrl))
+
+                    for potentialContactProfile in arrayPotentialContact:
+                        writer.writerow([potentialContactProfile.getFullname(), potentialContactProfile.getProfile()])
+
+
+
+        except NoSuchElementException:
+            sys.stdout.write("")
+
+
 def closeDivLike(selectorCloseDiv):
     elementCloseDiv = browser.find_element(By.CSS_SELECTOR, selectorCloseDiv)
     ActionChains(browser).move_to_element(elementCloseDiv).perform()
