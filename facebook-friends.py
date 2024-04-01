@@ -26,7 +26,7 @@ wd_options.add_argument("--disable-infobars")
 wd_options.add_argument("--mute-audio")
 # wd_options.add_argument("--headless")
 browser = webdriver.Chrome(options=wd_options)
-browser.implicitly_wait(35)
+#browser.implicitly_wait(35)
 
 
 # --------------- Ask user to log in -----------------
@@ -559,8 +559,7 @@ def splitUsernameGroup(valueLink):
     return username
 
 def getLikeFromFileGroup(prefix):
-    #filenameReader = input("Enter the filename .csv from contact list: ")
-    filenameReader = "13_1_group_2024_03_07_1208.csv"
+    filenameReader = input("Enter the filename .csv from contact list: ")
     if len(filenameReader) > 0 and len(prefix) > 0:
         print("Loading list from %s..." % filenameReader)
         myfriends = load_csv_two(filenameReader)
@@ -1158,7 +1157,7 @@ def openDivGetContact(arrayLinkContact, arrayNameContact, post, selector, select
         getLinkContactPublication(arrayLinkContact, selectorContactLink)
 
 def searchAccountFromFile(prefix):
-    filenameReader = "votantes_pocitos.csv"
+    filenameReader = input("Enter the filename .csv: ")
     if len(filenameReader) > 0:
         listFileRow = loadCustomCsv(filenameReader, "B_lastname", "B_second_lastname", "B_firstname", "B_middlename")
 
@@ -1198,7 +1197,8 @@ def searchAccountFromFile(prefix):
 
 
 def searchAccountFromFile(prefix):
-    filenameReader = "votantes_pocitos.csv"
+    os.chdir("./doc")
+    filenameReader = input("Enter the filename .csv: ")
     if len(filenameReader) > 0:
         listFileRow = loadCustomCsv(filenameReader, "B_lastname", "B_second_lastname", "B_firstname", "B_middlename")
 
@@ -1208,6 +1208,7 @@ def searchAccountFromFile(prefix):
             writer.writerow(['B_name', 'B_profile'])
 
             for fileRow in listFileRow:
+                #print(fileRow)
                 browser.get(url=f"https://www.facebook.com/search/top/?q={fileRow}")
                 sleep(5)
                 arrayPotentialContact = []
@@ -1229,6 +1230,75 @@ def searchAccountFromFile(prefix):
                         writer.writerow([potentialContactProfile.getFullname(), potentialContactProfile.getProfile()])
 
 
+
+        except NoSuchElementException:
+            sys.stdout.write("")
+
+
+def verifyExistWord(nameCountry, textSearch):
+    responseFlag = False
+    if len(nameCountry) > 0 and len(textSearch) > 0:
+        if nameCountry in textSearch:
+            responseFlag = True
+
+    return responseFlag
+
+
+def searchAccountFilter(prefix, numberIteration):
+    os.chdir("./doc")
+    filenameReader = input("Enter the filename .csv: ")
+    if len(filenameReader) > 0:
+        listFileRow = loadCustomCsv(filenameReader, "B_lastname", "B_second_lastname", "B_firstname", "B_middlename")
+
+        try:
+            os.chdir("../")
+            csvOut = prefix + "found_user_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+            writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+
+            for fileRow in listFileRow:
+                print(fileRow)
+                browser.get(url=f"https://www.facebook.com/search/people/?q={fileRow}")
+                selector = 'div[class="x193iq5w x1xwk8fm"] > div[class="x1yztbdb"] > div[class="x78zum5 x1n2onr6 xh8yej3"] > div[class="x9f619 x1n2onr6 x1ja2u2z x1jx94hy x1qpq9i9 xdney7k xu5ydu1 xt3gfkd xh8yej3 x6ikm8r x10wlt62 xquyuld"] > div > div[class="x1xmf6yo x1e56ztr"] > div[class="x1n2onr6 x1ja2u2z x9f619 x78zum5 xdt5ytf x2lah0s x193iq5w"] > div[class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x1iyjqo2 x2lwn1j"] > div[class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x2lah0s x193iq5w"] > div[data-visualcompletion="ignore-dynamic"] > div[class="x1lq5wgf xgqcy7u x30kzoy x9jhf4c x1lliihq"] > div[class="x6s0dn4 x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1q0g3np x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r xeuugli x18d9i69 x1sxyh0 xurb0ha xexx8yu x1n2onr6 x1ja2u2z x1gg8mnh"] > div[class="x6s0dn4 xkh2ocl x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1q0g3np x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r x2lwn1j xeuugli x18d9i69 x4uap5 xkhd6sd xexx8yu x1n2onr6 x1ja2u2z"] > div[class="x1qjc9v5 x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1r8uery xdt5ytf x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r x2lwn1j xeuugli x4uap5 xkhd6sd xz9dl7a xsag5q8 x1n2onr6 x1ja2u2z"] > div > div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]'
+                selectorTwo = 'div[class="x9f619 x193iq5w x1miatn0 xqmdsaz x1gan7if x1xfsgkm"] > div[class="x193iq5w x1xwk8fm"] > div[class="x1yztbdb"]'
+                counter = 0
+                while counter < int(numberIteration):
+                    counter = counter + 1
+                    scroll_to_bottom_two(selectorTwo, 3)
+
+                listItem = browser.find_elements(By.CSS_SELECTOR, selectorTwo)
+                print("quantity")
+                print(len(listItem))
+                selectorItem = 'div[class="x78zum5 x1n2onr6 xh8yej3"] > div[class="x9f619 x1n2onr6 x1ja2u2z x1jx94hy x1qpq9i9 xdney7k xu5ydu1 xt3gfkd xh8yej3 x6ikm8r x10wlt62 xquyuld"] > div > div[class="x1xmf6yo x1e56ztr"] > div[class="x1n2onr6 x1ja2u2z x9f619 x78zum5 xdt5ytf x2lah0s x193iq5w"] > div[class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x1iyjqo2 x2lwn1j"] > div[class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x2lah0s x193iq5w"] > div[data-visualcompletion="ignore-dynamic"] > div[class="x1lq5wgf xgqcy7u x30kzoy x9jhf4c x1lliihq"] > div[class="x6s0dn4 x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1q0g3np x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r xeuugli x18d9i69 x1sxyh0 xurb0ha xexx8yu x1n2onr6 x1ja2u2z x1gg8mnh"] > div[class="x6s0dn4 xkh2ocl x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1q0g3np x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r x2lwn1j xeuugli x18d9i69 x4uap5 xkhd6sd xexx8yu x1n2onr6 x1ja2u2z"] > div[class="x1qjc9v5 x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1r8uery xdt5ytf x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r x2lwn1j xeuugli x4uap5 xkhd6sd xz9dl7a xsag5q8 x1n2onr6 x1ja2u2z"] > div > div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"] > div[class="xu06os2 x1ok221b"] > span[class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x4zkp8e x41vudc x6prxxf xvq8zen xo1l8bm xi81zsa x1yc453h"]'
+                selectorNameContact = 'div[class="x78zum5 x1n2onr6 xh8yej3"] > div[class="x9f619 x1n2onr6 x1ja2u2z x1jx94hy x1qpq9i9 xdney7k xu5ydu1 xt3gfkd xh8yej3 x6ikm8r x10wlt62 xquyuld"] > div > div[class="x1xmf6yo x1e56ztr"] > div[class="x1n2onr6 x1ja2u2z x9f619 x78zum5 xdt5ytf x2lah0s x193iq5w"] > div[class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x1iyjqo2 x2lwn1j"] > div[class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x2lah0s x193iq5w"] > div[data-visualcompletion="ignore-dynamic"] > div[class="x1lq5wgf xgqcy7u x30kzoy x9jhf4c x1lliihq"] > div[class="x6s0dn4 x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1q0g3np x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r xeuugli x18d9i69 x1sxyh0 xurb0ha xexx8yu x1n2onr6 x1ja2u2z x1gg8mnh"] > div[class="x6s0dn4 xkh2ocl x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1q0g3np x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r x2lwn1j xeuugli x18d9i69 x4uap5 xkhd6sd xexx8yu x1n2onr6 x1ja2u2z"] > div[class="x1qjc9v5 x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1r8uery xdt5ytf x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r x2lwn1j xeuugli x4uap5 xkhd6sd xz9dl7a xsag5q8 x1n2onr6 x1ja2u2z"] > div > div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"] > div[class="xu06os2 x1ok221b"] > span[class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1tu3fi x41vudc x1lkfr7t x1lbecb7 xk50ysn xzsf02u x1yc453h"]'
+                selectorLinkContact = 'div[class="x78zum5 x1n2onr6 xh8yej3"] > div[class="x9f619 x1n2onr6 x1ja2u2z x1jx94hy x1qpq9i9 xdney7k xu5ydu1 xt3gfkd xh8yej3 x6ikm8r x10wlt62 xquyuld"] > div > div[class="x1xmf6yo x1e56ztr"] > div[class="x1n2onr6 x1ja2u2z x9f619 x78zum5 xdt5ytf x2lah0s x193iq5w"] > div[class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x1iyjqo2 x2lwn1j"] > div[class="x9f619 x1n2onr6 x1ja2u2z x78zum5 xdt5ytf x2lah0s x193iq5w"] > div[data-visualcompletion="ignore-dynamic"] > div[class="x1lq5wgf xgqcy7u x30kzoy x9jhf4c x1lliihq"] > div[class="x6s0dn4 x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1q0g3np x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r xeuugli x18d9i69 x1sxyh0 xurb0ha xexx8yu x1n2onr6 x1ja2u2z x1gg8mnh"] > div[class="x6s0dn4 xkh2ocl x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1q0g3np x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r x2lwn1j xeuugli x18d9i69 x4uap5 xkhd6sd xexx8yu x1n2onr6 x1ja2u2z"] > div[class="x1qjc9v5 x1q0q8m5 x1qhh985 xu3j5b3 xcfux6l x26u7qi xm0m39n x13fuv20 x972fbf x9f619 x78zum5 x1r8uery xdt5ytf x1iyjqo2 xs83m0k x1qughib xat24cr x11i5rnm x1mh8g0r xdj266r x2lwn1j xeuugli x4uap5 xkhd6sd xz9dl7a xsag5q8 x1n2onr6 x1ja2u2z"] > div > div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"] > div[class="xu06os2 x1ok221b"] > span[class="x193iq5w xeuugli x13faqbe x1vvkbs x10flsy6 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1tu3fi x41vudc x1lkfr7t x1lbecb7 xk50ysn xzsf02u x1yc453h"] > div a'
+
+                #sleep(5)
+                arrayPotentialContact = []
+                arrayDuplicate = []
+                for item in listItem:
+                    if findElement(item, selectorItem):
+                        country = item.find_element(By.CSS_SELECTOR, selectorItem)
+                        if verifyExistWord("Uruguay", country.text):
+                            nameContact = ""
+                            if findElement(item, selectorNameContact):
+                                nameContact = item.find_element(By.CSS_SELECTOR, selectorNameContact)
+                                #print(nameContact.text)
+                            valueLinkContact = ""
+                            if findElement(item, selectorLinkContact):
+                                linkContact = item.find_element(By.CSS_SELECTOR, selectorLinkContact)
+                                valueLinkContact = linkContact.get_attribute("href")
+                                #print(valueLinkContact)
+
+                            if not existItemNameIntoArray(valueLinkContact, arrayDuplicate):
+                                arrayDuplicate.append(PotentialContactProfile(nameContact.text, valueLinkContact))
+                
+                        if len(arrayDuplicate) > 0:
+                            arrayPotentialContact.extend(arrayDuplicate)
+                            arrayDuplicate = []
+
+                for potentialContactProfile in arrayPotentialContact:
+                    writer.writerow([potentialContactProfile.getFullname(), potentialContactProfile.getProfile()])
+                    #print([potentialContactProfile.getFullname(), potentialContactProfile.getProfile()])
 
         except NoSuchElementException:
             sys.stdout.write("")
@@ -1423,7 +1493,8 @@ else:
 fb_login(configObj)
 
 item_option = input(
-    "Enter number value 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14 or 15 or 16 to generate list: ")
+    "Enter number value 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14 or 15 or 16 or 17 to "
+    "generate list: ")
 
 if item_option == "1":
     scrape_1st_degrees("1_1_")
@@ -1462,6 +1533,9 @@ elif item_option == "15":
 elif item_option == "16":
     #browser.implicitly_wait(30)
     searchAccountFromFile("16_1_")
+elif item_option == "17":
+    #browser.implicitly_wait(25)
+    searchAccountFilter("17_1_", 1)
 else:
     print(
         "Invalid # of arguments specified. Use none to scrape your 1st degree connections, or specify the name of the "
