@@ -26,7 +26,7 @@ wd_options.add_argument("--disable-infobars")
 wd_options.add_argument("--mute-audio")
 # wd_options.add_argument("--headless")
 browser = webdriver.Chrome(options=wd_options)
-browser.implicitly_wait(35)
+#browser.implicitly_wait(35)
 
 
 # --------------- Ask user to log in -----------------
@@ -570,31 +570,33 @@ def getLikeFromFileGroup(prefix):
 
         try:
             for friend in myfriends:
-                each_link = getValidUserLink(friend['profile'])
-                if "profile.php" in each_link:
-                    browser.get(url=f"{each_link}&sk=likes")
-                else:
-                    browser.get(url=f"{each_link}/likes")
+                userProfile = getValidUserLink(friend['profile'])
+                if len(userProfile) > 0:
+                    if "profile.php" in userProfile:
+                        browser.get(url=f"{userProfile}&sk=likes")
+                    else:
+                        browser.get(url=f"{userProfile}/likes")
 
-                scroll_to_bottom('//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]', 2, 0.5)
                 selectorPublisher = 'div[class="xyamay9 x1pi30zi x1l90r2v x1swvt13"] > div[class="x78zum5 x1q0g3np x1a02dak"] > div[class="x9f619 x1r8uery x1iyjqo2 x6ikm8r x10wlt62 x1n2onr6"] > div'
-                if findElement(browser, selectorPublisher):
-                    information_list = browser.find_elements(By.CSS_SELECTOR, selectorPublisher)
-                    for pn_item in information_list:
-                        selectorSpan = 'div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]'
-                        valueSpan = ""
-                        if findElement(pn_item, selectorSpan):
-                            item = pn_item.find_element(By.CSS_SELECTOR, selectorSpan)
-                            valueSpan = item.text
-                        selectorLink = 'a[class="x1i10hfl xjbqb8w x1ejq31n xd10rxx x1sy0etr x17r0tee x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x1ypdohk xt0psk2 xe8uvvx xdj266r x11i5rnm xat24cr x1mh8g0r xexx8yu x4uap5 x18d9i69 xkhd6sd x16tdsg8 x1hl2dhg xggy1nq x1a2a7pz x1heor9g xt0b8zv"]'
-                        valueLink = ""
-                        if findElement(pn_item, selectorLink):
-                            item = pn_item.find_element(By.CSS_SELECTOR, selectorLink)
-                            valueLink = item.get_attribute("href")
+                scroll_to_bottom('//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]', 2, 0.5)
+                numberPublisher = generate_numerator_css(selectorPublisher)
+                if numberPublisher > 0:
+                    if findElement(browser, selectorPublisher):
+                        information_list = browser.find_elements(By.CSS_SELECTOR, selectorPublisher)
+                        for pn_item in information_list:
+                            selectorSpan = 'div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]'
+                            valueSpan = ""
+                            if findElement(pn_item, selectorSpan):
+                                item = pn_item.find_element(By.CSS_SELECTOR, selectorSpan)
+                                valueSpan = item.text
+                            selectorLink = 'a[class="x1i10hfl xjbqb8w x1ejq31n xd10rxx x1sy0etr x17r0tee x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x1ypdohk xt0psk2 xe8uvvx xdj266r x11i5rnm xat24cr x1mh8g0r xexx8yu x4uap5 x18d9i69 xkhd6sd x16tdsg8 x1hl2dhg xggy1nq x1a2a7pz x1heor9g xt0b8zv"]'
+                            valueLink = ""
+                            if findElement(pn_item, selectorLink):
+                                item = pn_item.find_element(By.CSS_SELECTOR, selectorLink)
+                                valueLink = item.get_attribute("href")
 
-                        #print([friend['name'], valueSpan, valueLink])
-                        writer.writerow([friend['name'], valueSpan, valueLink])
-
+                            #print([friend['name'], valueSpan, valueLink])
+                            writer.writerow([friend['name'], valueSpan, valueLink])
 
         except NoSuchElementException:
             print("No Details")
@@ -603,9 +605,11 @@ def getLikeFromFileGroup(prefix):
 def getValidUserLink(each_link):
     partUsername = ""
     browser.get(url=f"{each_link}")
-    scroll_to_bottom_two('div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div div[class="x1cy8zhl x78zum5 x1q0g3np xod5an3 x1pi30zi x1swvt13 xz9dl7a"] > div[class="x1iyjqo2"] > div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"] > div', 1)
-    #listPublication = browser.find_elements(By.CSS_SELECTOR, 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div div[class="x1cy8zhl x78zum5 x1q0g3np xod5an3 x1pi30zi x1swvt13 xz9dl7a"] > div[class="x1iyjqo2"] > div > div  > span > h2 > span > strong > span')
-    listPublication = browser.find_elements(By.CSS_SELECTOR, 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div div[class="x1cy8zhl x78zum5 x1q0g3np xod5an3 x1pi30zi x1swvt13 xz9dl7a"] > div[class="x1iyjqo2"] > div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"] > div')
+    selectorPublication = 'div[class="x9f619 x1n2onr6 x1ja2u2z xeuugli xs83m0k x1xmf6yo x1emribx x1e56ztr x1i64zmx xjl7jj x19h7ccj xu9j1y6 x7ep2pv"] > div:not(.x1yztbdb) > div div[class="x1cy8zhl x78zum5 x1q0g3np xod5an3 x1pi30zi x1swvt13 xz9dl7a"] > div[class="x1iyjqo2"] > div[class="x78zum5 xdt5ytf xz62fqu x16ldp7u"] > div';
+    numberSelectorScroll = generate_numerator_css(selectorPublication)
+    if numberSelectorScroll > 0 and numberSelectorScroll != 2:
+        scroll_to_bottom_two(selectorPublication, 1)
+    listPublication = browser.find_elements(By.CSS_SELECTOR, selectorPublication)
     selectorName = 'a[class="x1i10hfl xjbqb8w x1ejq31n xd10rxx x1sy0etr x17r0tee x972fbf xcfux6l x1qhh985 xm0m39n x9f619 x1ypdohk xt0psk2 xe8uvvx xdj266r x11i5rnm xat24cr x1mh8g0r xexx8yu x4uap5 x18d9i69 xkhd6sd x16tdsg8 x1hl2dhg xggy1nq x1a2a7pz xt0b8zv xzsf02u x1s688f"]'
     try:
         for publication in listPublication:
@@ -844,11 +848,13 @@ def existItemProfileIntoArrayTwo(link, arrayMember):
 
 
 def getMemberFromGroup(prefix):
+    os.chdir("./doc")
     filename = input("Enter the filename .csv from the contact group list: ")
     if len(filename) > 0 and len(prefix) > 0:
         print("Loading list from %s..." % filename)
         myfriends = load_csv_two(filename)
         print("------------------------------------------")
+        os.chdir("../")
         # Prep CSV Output File
         csvOut = prefix + 'group_%s.csv' % datetime.now().strftime("%Y_%m_%d_%H%M")
         writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
@@ -1530,6 +1536,7 @@ elif item_option == "12":
 elif item_option == "13":
     getMemberFromGroup("13_1_")
 elif item_option == "14":
+    #browser.implicitly_wait(20)
     getLikeFromFileGroup("14_1_")
 elif item_option == "15":
     #browser.implicitly_wait(35)
