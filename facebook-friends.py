@@ -26,7 +26,7 @@ wd_options.add_argument("--disable-infobars")
 wd_options.add_argument("--mute-audio")
 # wd_options.add_argument("--headless")
 browser = webdriver.Chrome(options=wd_options)
-#browser.implicitly_wait(35)
+browser.implicitly_wait(45)
 
 
 # --------------- Ask user to log in -----------------
@@ -999,6 +999,7 @@ def existItemNameIntoArrayTwo(content, arrayPost):
 
 
 def generatePostFromList(prefix, numberIteration):
+    os.chdir("./doc")
     filenameReader = input("Enter the filename .csv: ")
     if len(filenameReader) > 0 and len(prefix) > 0:
 
@@ -1009,6 +1010,7 @@ def generatePostFromList(prefix, numberIteration):
         print("Loading list from %s..." % filenameReader)
         myfriends = load_csv_two(filenameReader)
 
+        os.chdir("../")
         try:
             for friend in myfriends:
                 each_link = friend['profile']
@@ -1033,8 +1035,6 @@ def generatePostFromList(prefix, numberIteration):
                             if content is not None:
                                 if not existItemNameIntoArray(content.text, arrayPublication):
                                     arrayPublication.append(Publication(friend['name'], content.text))
-
-                        # arrayFriend.append(arrayPublication)
 
                     for publication in arrayPublication:
                         writer.writerow([publication])
@@ -1082,10 +1082,12 @@ def generateListContactPublicationThree(arrayNameContact, arrayLinkContact, arra
 
 def getListContactPublication(prefix, numberIteration):
     filenameReader = input("Enter the filename .csv: ")
+    os.chdir("./doc")
     if len(filenameReader) > 0 and len(prefix) > 0:
 
         print("Loading list from %s..." % filenameReader)
         myfriends = load_csv_two(filenameReader)
+        os.chdir("../")
 
         for friend in myfriends:
             each_link = friend['profile']
@@ -1101,7 +1103,7 @@ def getListContactPublication(prefix, numberIteration):
 
                 csvOut = prefix + "user_publication_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
                 writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-                #writer.writerow(['B_name', 'B_profile'])
+                writer.writerow(['B_name', 'B_profile'])
 
                 while counter <= int(numberIteration):
                     counter = counter + 1
@@ -1140,12 +1142,11 @@ def getListContactPublication(prefix, numberIteration):
                             arrayNameContact = []
 
                         for contactPublication in arrayContact:
-                            print(contactPublication)
-                            # (nameAccount, publication, nameContact, profileContact):
+                            #print(contactPublication)
                             writer.writerow([contactPublication.getNameAccount(), contactPublication.getPublication(), contactPublication.getNameContact(), contactPublication.getProfileContact()])
 
                         arrayContact = []
-                        sleep(35)
+                        sleep(45)
                     except NoSuchElementException:
                         sys.stdout.write("")
 
@@ -1539,7 +1540,7 @@ elif item_option == "14":
     #browser.implicitly_wait(20)
     getLikeFromFileGroup("14_1_")
 elif item_option == "15":
-    #browser.implicitly_wait(35)
+    #browser.implicitly_wait(45)
     getListContactPublication("15_1_", 1)
 elif item_option == "16":
     #browser.implicitly_wait(30)
