@@ -1540,7 +1540,7 @@ elif item_option == "14":
     #browser.implicitly_wait(20)
     getLikeFromFileGroup("14_1_")
 elif item_option == "15":
-    #browser.implicitly_wait(35)
+    #browser.implicitly_wait(45)
     getListContactPublication("15_1_", 1)
 elif item_option == "16":
     #browser.implicitly_wait(30)
