@@ -26,7 +26,7 @@ wd_options.add_argument("--disable-infobars")
 wd_options.add_argument("--mute-audio")
 # wd_options.add_argument("--headless")
 browser = webdriver.Chrome(options=wd_options)
-browser.implicitly_wait(45)
+#browser.implicitly_wait(45)
 
 
 # --------------- Ask user to log in -----------------
@@ -443,7 +443,7 @@ def readBasicInfo(all_friends_date, all_friends_email, all_friends_gender, all_f
     information_list = browser.find_elements(By.XPATH,
                                              '//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]/span')
     ph_list = []
-    username = friend['username']
+    username = get_profile_from_url(friend['profile'])
     for pn_item in information_list:
         if len(pn_item.text) > 0:
             ph_list.append(pn_item.text)
@@ -563,7 +563,6 @@ def getLikeFromFileGroup(prefix):
     if len(filenameReader) > 0 and len(prefix) > 0:
         print("Loading list from %s..." % filenameReader)
         myfriends = load_csv_two(filenameReader)
-        response_list = []
         csvOut = prefix + "user_like_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
         writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
         writer.writerow(['name', 'B_name','B_like'])
@@ -580,6 +579,7 @@ def getLikeFromFileGroup(prefix):
                 selectorPublisher = 'div[class="xyamay9 x1pi30zi x1l90r2v x1swvt13"] > div[class="x78zum5 x1q0g3np x1a02dak"] > div[class="x9f619 x1r8uery x1iyjqo2 x6ikm8r x10wlt62 x1n2onr6"] > div'
                 scroll_to_bottom('//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]', 2, 0.5)
                 numberPublisher = generate_numerator_css(selectorPublisher)
+                sleep(20)
                 if numberPublisher > 0:
                     if findElement(browser, selectorPublisher):
                         information_list = browser.find_elements(By.CSS_SELECTOR, selectorPublisher)
@@ -597,6 +597,7 @@ def getLikeFromFileGroup(prefix):
 
                             #print([friend['name'], valueSpan, valueLink])
                             writer.writerow([friend['name'], valueSpan, valueLink])
+                    sleep(20)
 
         except NoSuchElementException:
             print("No Details")
@@ -1537,7 +1538,6 @@ elif item_option == "12":
 elif item_option == "13":
     getMemberFromGroup("13_1_")
 elif item_option == "14":
-    #browser.implicitly_wait(20)
     getLikeFromFileGroup("14_1_")
 elif item_option == "15":
     #browser.implicitly_wait(45)
