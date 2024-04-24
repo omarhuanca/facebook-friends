@@ -14,6 +14,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 from selenium.webdriver import ActionChains
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 print("\n" * 100)
 
@@ -25,7 +27,7 @@ wd_options.add_argument("--disable-notifications")
 wd_options.add_argument("--disable-infobars")
 wd_options.add_argument("--mute-audio")
 # wd_options.add_argument("--headless")
-browser = webdriver.Chrome(options=wd_options)
+browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=wd_options)
 #browser.implicitly_wait(45)
 
 
@@ -369,16 +371,20 @@ def getDataInfoFromFile(prefix):
     all_friends_website = []
     # Have to separate each link, because some of profile links have username, and others just default fb numbers
 
-    csvOut = prefix + "basic_info_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
-    writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-    writer.writerow(['Name', 'Mobile', 'Email', 'Gender', 'Birthday', 'Year', 'Language', 'Website'])
-
+    os.chdir("./doc")
     filenameReader = input("Enter the filename .csv: ")
     print("Loading list from %s..." % filenameReader)
     myfriends = load_csv_two(filenameReader)
 
+    os.chdir("../")
+    csvOut = prefix + "basic_info_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
+    writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
+    writer.writerow(['Name', 'Mobile', 'Email', 'Gender', 'Birthday', 'Year', 'Language', 'Website'])
+
+
     for friend in myfriends:
         each_link = friend['profile']
+        print(friend['name'])
         try:
             if "profile.php" in each_link:
                 browser.get(url=f"{each_link}&sk=about_contact_and_basic_info")
@@ -390,8 +396,9 @@ def getDataInfoFromFile(prefix):
                 readBasicInfo(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
                               all_friends_phone_number, all_friends_year, all_friends_website, friend)
 
-        except NoSuchElementException:
-            print("No Details")
+        except Exception:
+            sys.stdout.write("")
+            pass
 
     for friend in myfriends:
         username = friend['username']
@@ -440,36 +447,39 @@ def get_info_basic_info(all_friends_date, all_friends_email, all_friends_gender,
 
 def readBasicInfo(all_friends_date, all_friends_email, all_friends_gender, all_friends_language,
                   all_friends_phone_number, all_friends_year, all_friends_website, friend):
-    information_list = browser.find_elements(By.XPATH,
-                                             '//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]/span')
-    ph_list = []
-    username = get_profile_from_url(friend['profile'])
-    for pn_item in information_list:
-        if len(pn_item.text) > 0:
-            ph_list.append(pn_item.text)
-    for pn_item in ph_list:
-        if pn_item == "Mobile":
-            item_id = ph_list.index(pn_item) - 1
-            all_friends_phone_number.append({username: ph_list[item_id]})
-        if pn_item == "Email":
-            item_id = ph_list.index(pn_item) - 1
-            all_friends_email.append({username: ph_list[item_id]})
-        if pn_item == "Gender":
-            item_info = ph_list.index(pn_item) - 1
-            all_friends_gender.append({username: ph_list[item_info]})
-        if pn_item == "Birth date":
-            item_date = ph_list.index(pn_item) - 1
-            all_friends_date.append({username: ph_list[item_date]})
-        if pn_item == "Birth year":
-            item_year = ph_list.index(pn_item) - 1
-            all_friends_year.append({username: ph_list[item_year]})
-        if pn_item == "Languages":
-            item_language = ph_list.index(pn_item) - 1
-            all_friends_language.append({username: ph_list[item_language]})
-        if pn_item == "Website":
-            itemWebsite = ph_list.index(pn_item) - 1
-            all_friends_website.append({username: ph_list[itemWebsite]})
-
+    try:
+        information_list = browser.find_elements(By.XPATH,
+                                                 '//div[@class="x78zum5 xdt5ytf xz62fqu x16ldp7u"]/div[1]/span')
+        ph_list = []
+        username = get_profile_from_url(friend['profile'])
+        for pn_item in information_list:
+            if len(pn_item.text) > 0:
+                ph_list.append(pn_item.text)
+        for pn_item in ph_list:
+            if pn_item == "Mobile":
+                item_id = ph_list.index(pn_item) - 1
+                all_friends_phone_number.append({username: ph_list[item_id]})
+            if pn_item == "Email":
+                item_id = ph_list.index(pn_item) - 1
+                all_friends_email.append({username: ph_list[item_id]})
+            if pn_item == "Gender":
+                item_info = ph_list.index(pn_item) - 1
+                all_friends_gender.append({username: ph_list[item_info]})
+            if pn_item == "Birth date":
+                item_date = ph_list.index(pn_item) - 1
+                all_friends_date.append({username: ph_list[item_date]})
+            if pn_item == "Birth year":
+                item_year = ph_list.index(pn_item) - 1
+                all_friends_year.append({username: ph_list[item_year]})
+            if pn_item == "Languages":
+                item_language = ph_list.index(pn_item) - 1
+                all_friends_language.append({username: ph_list[item_language]})
+            if pn_item == "Website":
+                itemWebsite = ph_list.index(pn_item) - 1
+                all_friends_website.append({username: ph_list[itemWebsite]})
+    except Exception:
+        sys.stdout.write("")
+        pass
 
 def generate_user_like_from_list(prefix):
     filenameReader = input("Enter the filename .csv from contact list: ")
