@@ -379,7 +379,7 @@ def getDataInfoFromFile(prefix):
     os.chdir("../")
     csvOut = prefix + "basic_info_%s.csv" % datetime.now().strftime("%Y_%m_%d_%H%M")
     writer = csv.writer(open(csvOut, 'w', encoding="utf-8"))
-    writer.writerow(['Name', 'Mobile', 'Email', 'Gender', 'Birthday', 'Year', 'Language', 'Website'])
+    writer.writerow(['Username', 'Mobile', 'Email', 'Gender', 'Birthday', 'Year', 'Language', 'Website'])
 
 
     for friend in myfriends:
